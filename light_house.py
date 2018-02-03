@@ -1,6 +1,5 @@
 
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 
 # Generates a vector containing random angles ranging from 0 to pi
