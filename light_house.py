@@ -1,5 +1,6 @@
 
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 # Generates a vector containing random angles ranging from 0 to pi
@@ -13,11 +14,11 @@ def position_converter(angle_array,x_0,y_0):
     temp = 0
 
     for i in range(len(angle_array)):
-        if angle_array[i-temp] == 0:
+        if angle_array[i-temp] == 0 or angle_array[i-temp] == np.pi:
             del angle_array[i-temp]
             temp += 1
 
-    hypotenuse_array = np.zeros(len(angle_array))    #hypotenuse_arrays contains all the values of the hypotenuse of data
+    hypotenuse_array = np.zeros(len(angle_array))    #hypotenuse_array contains all the values of the hypotenuse of data
     abs_x_array = np.zeros(len(angle_array))
     position_array = np.zeros(len(angle_array))
 
