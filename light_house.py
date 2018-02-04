@@ -47,6 +47,9 @@ def light_house(x_0,y_0,N):
        plt.title('Histogram of data points')
        plt.show()
 
+       print('Data sample:', position_array)
+
+
 #######################################################################################################################
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
