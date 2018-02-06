@@ -64,7 +64,7 @@ def light_house(x_0,y_0,N):
        posterior_array=posterior(position_array, y_0)
        # print('Data sample:', position_array)
        plt.plot(limit, posterior_array)
-       plt.ylabel('Likelyhood(x)')
+       plt.ylabel('posterior(x)')
        plt.xlabel('light house position')
        plt.title('pdf-function')
        plt.show()
