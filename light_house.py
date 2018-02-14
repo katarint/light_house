@@ -34,7 +34,7 @@ def position_converter(angle_array,x_0,y_0):
 
 
 def posterior(position_array, y_0):       # using a flat prior
-    limit = np.arange(-500, 500)
+    limit = np.arange(-300, 300)
     likelyhood_matrix = np.zeros((np.size(limit), np.size(position_array)))
     posterior_array = np.zeros(len(limit))
     for i in range(np.size(limit)):
@@ -52,27 +52,30 @@ def posterior(position_array, y_0):       # using a flat prior
 def light_house(x_0,y_0,N):
        angle_array=random_angle_generator(N)
        position_array=position_converter(angle_array,x_0,y_0)
-       limit = np.arange(-500, 500)
+       limit = np.arange(-300, 300)
 
        hist_range=[x_0-500,x_0+500]
 
        posterior_array = posterior(position_array, y_0)
+       position_average = np.sum(position_array)/2
+
        '''plotting'''
 
        plt.style.use('ggplot')
        fig, axes = plt.subplots(2, sharex=True)
        ax1, ax2 = axes.ravel()
-
        ax1.hist(position_array, 'fd', hist_range, normed=False, weights=None, density=None)
 
        ax2.plot(limit, posterior_array)
 
-       ax1.set_title('Light house')
+       ax1.set_title('Light house: data histogram and posterior graph')
        ax1.set_xlabel('Positions along the shore')
        ax1.set_ylabel('Counts')
 
        ax2.set_xlabel('Positions along the shore')
        ax2.set_ylabel('Posterior graph')
+
+       ax1.vlines(position_average, 15, 100, colors='g')
 
        fig.tight_layout()
        plt.show()
@@ -85,7 +88,7 @@ def light_house(x_0,y_0,N):
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
 
-light_house(50,10,100)
+light_house(0,10,50)
 
 
 
