@@ -77,6 +77,8 @@ def light_house(x_0,y_0,N):
 
        ax1.vlines(position_average, 15, 100, colors='g')
 
+       ax1.legend((round(position_average), N), loc='upper right', shadow=True)
+
        fig.tight_layout()
        plt.show()
 
