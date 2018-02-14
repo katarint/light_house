@@ -55,18 +55,26 @@ def light_house(x_0,y_0,N):
        limit = np.arange(-500, 500)
 
        hist_range=[x_0-500,x_0+500]
-       plt.hist(position_array, 'fd', hist_range, normed=False, weights=None, density=None)  # determining bin size
-                                                                                             # with Freedman-method
-       plt.ylabel('Number of counts')
-       plt.xlabel('Measurement variable')
-       plt.title('Histogram of data points')
-       plt.show()
-       posterior_array=posterior(position_array, y_0)
-       # print('Data sample:', position_array)
-       plt.plot(limit, posterior_array)
-       plt.ylabel('posterior(x)')
-       plt.xlabel('light house position')
-       plt.title('pdf-function')
+
+       posterior_array = posterior(position_array, y_0)
+       '''plotting'''
+
+       plt.style.use('ggplot')
+       fig, axes = plt.subplots(2, sharex=True)
+       ax1, ax2 = axes.ravel()
+
+       ax1.hist(position_array, 'fd', hist_range, normed=False, weights=None, density=None)
+
+       ax2.plot(limit, posterior_array)
+
+       ax1.set_title('Light house')
+       ax1.set_xlabel('Positions along the shore')
+       ax1.set_ylabel('Counts')
+
+       ax2.set_xlabel('Positions along the shore')
+       ax2.set_ylabel('Posterior graph')
+
+       fig.tight_layout()
        plt.show()
 
 
@@ -78,7 +86,6 @@ def light_house(x_0,y_0,N):
 # x_0,y_0= position of light house, N = number of data
 
 light_house(50,10,100)
-
 
 
 
