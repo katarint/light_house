@@ -71,7 +71,7 @@ def light_house(x_0,y_0,N):
 
        posterior_array, limit = posterior(position_array, x_0, y_0)
 
-       position_average = np.sum(position_array)/2
+       position_average = np.sum(position_array)/N
 
        '''making subplots'''
 
@@ -104,7 +104,7 @@ def light_house(x_0,y_0,N):
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
 
-light_house(0,10,1000)
+light_house(50,10,500)
 
 
 
