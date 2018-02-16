@@ -65,8 +65,8 @@ def posterior(position_array,x_0, y_0):       # using a flat prior
 
 
 def light_house(x_0,y_0,N):
-       angle_array=random_angle_generator(N)
-       position_array=position_converter(angle_array,x_0,y_0)
+       angle_array = random_angle_generator(N)
+       position_array = position_converter(angle_array,x_0,y_0)
        hist_range=[x_0-500,x_0+500]
 
        posterior_array, limit = posterior(position_array, x_0, y_0)
@@ -74,6 +74,11 @@ def light_house(x_0,y_0,N):
        position_average = np.sum(position_array)/N
 
        '''making subplots'''
+
+       '''Finding maximum value of posterior'''
+
+       posterior_max = np.argmax(posterior_array)    # returns the index for the maximum value in posterior_array
+       position_max = limit[posterior_max]
 
        plt.style.use('ggplot')
        fig, axes = plt.subplots(2, sharex=True)
@@ -89,10 +94,10 @@ def light_house(x_0,y_0,N):
        ax2.set_xlabel('Positions along the shore')
        ax2.set_ylabel('Posterior graph')
 
-       ax2.vlines(position_average, -300, 100, colors='g')
+       ax2.vlines(position_average, -500, 100, colors='g')
 
-       ax1.legend((round(position_average), N), loc='upper right', shadow=True)
-       ax2.legend((round(position_average), N), loc='upper right', shadow=True)
+       ax1.legend((N,round(position_average)), loc='upper right', shadow=True)
+       ax2.legend((position_max, (round(position_average))), loc='upper right', shadow=True)
 
        fig.tight_layout()
        plt.show()
@@ -103,7 +108,7 @@ def light_house(x_0,y_0,N):
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
 
-light_house(50,10,50)
+light_house(50,10,90)
 
 
 
