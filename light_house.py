@@ -89,14 +89,13 @@ def light_house(x_0,y_0,N):
        ax2.set_xlabel('Positions along the shore')
        ax2.set_ylabel('Posterior graph')
 
-       ax1.vlines(position_average, 15, 100, colors='g')
+       ax2.vlines(position_average, -300, 100, colors='g')
 
        ax1.legend((round(position_average), N), loc='upper right', shadow=True)
+       ax2.legend((round(position_average), N), loc='upper right', shadow=True)
 
        fig.tight_layout()
        plt.show()
-
-
 
 
 
@@ -104,7 +103,7 @@ def light_house(x_0,y_0,N):
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
 
-light_house(50,10,500)
+light_house(50,10,50)
 
 
 
