@@ -33,7 +33,8 @@ def position_converter(angle_array,x_0,y_0):
     return position_array
 
 
-def posterior(position_array,x_0, y_0):       # using a flat prior
+def posterior(position_array,x_0, y_0):
+    # using a flat prior, the x_0 input is not necessary since an arbitrary limit/range can be used
     limit = np.arange(-100 + x_0, 100 + x_0)
     log_array = np.zeros((np.size(limit), np.size(position_array)))
     posterior_array = np.zeros(np.size(limit))
@@ -41,7 +42,6 @@ def posterior(position_array,x_0, y_0):       # using a flat prior
     for i in range(np.size(limit)):
         for k in range(0, np.size(position_array)):
             log_array[i][k] = - np.log(np.power(y_0, 2) + np.power(position_array[k] - (limit[i]), 2))
-
 
     for i in range(np.size(limit)):
         posterior_array[i] = np.sum(log_array[i])  # sums up all the log terms for a fixed alpha
@@ -78,7 +78,7 @@ def light_house(x_0,y_0,N):
        '''Finding maximum value of posterior'''
 
        posterior_max = np.argmax(posterior_array)    # returns the index for the maximum value in posterior_array
-       position_max = limit[posterior_max]
+       position_max = limit[posterior_max]           # finds the x-position for the best estimate
 
        plt.style.use('ggplot')
        fig, axes = plt.subplots(2, sharex=True)
