@@ -1,15 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 
-# Generates a vector containing random angles ranging from 0 to pi
 def random_angle_generator(N):
+    '''Generates a vector containing random angles ranging from 0 to pi
+    input: N (Number of data to be generated)
+    output: angle_array ( an array containing angles)'''
+
     angle_array = np.random.uniform(0, np.pi, size=N)
     return angle_array
 
 
-# converts the generated angles into x-positions
 def position_converter(angle_array, x_0, y_0):
+    '''converts the generated angles into x-positions
+    input: angle_array (an array containing angles), x_0 (position of light house in x), y_0 (height of light house)
+    output: position_array (an array containing positions corresponding to the angles in angle_array)'''
+
     position_array = np.zeros(len(angle_array))
     for i in range(len(angle_array)):
         if angle_array[i] == 0:
@@ -34,6 +41,7 @@ def position_converter(angle_array, x_0, y_0):
 
 
 def posterior(position_array, x_0, y_0):
+    '''calculates posterior for one parameter, x. When y is known'''
     # using a flat prior, the x_0 input is not necessary since an arbitrary limit/range can be used
     limit = np.arange(-100 + x_0, 100 + x_0)
     log_array = np.zeros((np.size(limit), np.size(position_array)))
@@ -53,15 +61,11 @@ def log_posterior_2(x, y, position_array):
     Z = np.zeros((np.size(y), (np.size(x))))
     Z_temp = np.zeros(np.size(position_array))
 
-    for j in np.arange(np.size(y)):
+    for j in np.arange(1, np.size(y)):
         for i in np.arange(np.size(x)):
             for k in np.arange(np.size(position_array)):
-                Z_temp[k] = - np.log(np.power(y[j], 2) + np.power(position_array[k] - x[i], 2))
-# setting a prior (not sure if this is the right way to code prior(?) ), prob(x_0, y_0) = 0 if j < 5
-            if j < 5:
-                Z[j][i] = 0
-            else:
-                Z[j][i] = np.sum(Z_temp)
+                Z_temp[k] = np.log(np.pi*(np.power(y[j], 2) + np.power(position_array[k] - x[i], 2)))
+            Z[j][i] = np.size(position_array)*np.log(y[j]) - np.sum(Z_temp)
 
 
     return Z
@@ -70,8 +74,8 @@ def log_posterior_2(x, y, position_array):
 
 def posterior_2(position_array, x_0, y_0):
     # the x_0 and y_0 input is not necessary since an arbitrary limit/range can be used
-    limit_x = np.arange(-20 + x_0, 20 + x_0)
-    limit_y = np.arange(0, 40 + y_0)
+    limit_x = np.arange(-20 + x_0, 20 + x_0, 0.5)
+    limit_y = np.arange(0, 20 + y_0, 0.5)
     x = limit_x
     y = limit_y
     X, Y = np.meshgrid(x, y)
@@ -82,6 +86,7 @@ def posterior_2(position_array, x_0, y_0):
 
 
 def light_house(x_0, y_0, N):
+    '''light_house-function input parameters : (x_0,y_0,N)'''
     angle_array = random_angle_generator(N)
     position_array = position_converter(angle_array, x_0, y_0)
     hist_range = [x_0 - 100, x_0 + 100]
@@ -117,8 +122,8 @@ def light_house(x_0, y_0, N):
 
 
     plt.subplot(223)
-    plt.contour(X, Y, Z, 10, colors='black')
-    plt.title('Prob(x,y|I) contour plot', fontsize=10)
+    plt.contour(X, Y, Z, 70, colors='black')
+    plt.title('Prob(x,y|{Data},I) contour plot', fontsize=10)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.show()
@@ -129,7 +134,7 @@ def light_house(x_0, y_0, N):
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
 
-light_house(0, 10, 100)
+light_house(0, 10, 200)
 
 
 
