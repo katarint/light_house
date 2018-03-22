@@ -2,14 +2,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Generates a vector containing random angles ranging from 0 to pi
+# Generates a vector containing N random angles ranging from 0 to pi
 def random_angle_generator(N):
     angle_array = np.random.uniform(0, np.pi, size=N)
     return angle_array
 
 
+
 # converts the generated angles into x-positions
-def position_converter(angle_array,x_0,y_0):
+def position_converter(angle_array, x_0, y_0):
     position_array = np.zeros(len(angle_array))
     for i in range(len(angle_array)):
         if angle_array[i] == 0:
@@ -18,16 +19,15 @@ def position_converter(angle_array,x_0,y_0):
 
         elif angle_array[i] == 2*np.pi:
              angle_array[i] = np.pi - 0.001
-             position_array = x_0 + abs(y_0/np.tan(angle_array[i]))
+             position_array = x_0 + abs(y_0/(np.tan(angle_array[i])-np.pi/2))
 
         elif angle_array[i] == np.pi/2:
-            angle_array[i] = np.pi/2 - 0.001
-            position_array[i] =x_0 - y_0 / np.tan(angle_array[i])
+            position_array[i] =x_0
 
         elif angle_array[i] > np.pi/2 and angle_array[i] != np.pi:
-            position_array[i] = x_0 + abs(y_0 / np.tan(angle_array[i]))
+            position_array[i] = x_0 + y_0 / (np.tan(angle_array[i]-np.pi/2))
 
-        elif angle_array[i] < np.pi/2 and angle_array[i] != 0 :
+        elif angle_array[i] < np.pi/2 and angle_array[i] != 0:
             position_array[i] = x_0 - y_0/np.tan(angle_array[i])
 
     return position_array
@@ -35,15 +35,17 @@ def position_converter(angle_array,x_0,y_0):
 
 def posterior(position_array,x_0, y_0):
     # using a flat prior, the x_0 input is not necessary since an arbitrary limit/range can be used
-    limit = np.arange(-100 + x_0, 100 + x_0)
+    limit = np.arange(0, 1500)
     log_array = np.zeros((np.size(limit), np.size(position_array)))
-    posterior_array = np.zeros(np.size(limit))
+    posterior_array = [0]*len(limit)
+    #posterior_array = np.zeros(np.size(limit))
 
     for i in range(np.size(limit)):
         for k in range(0, np.size(position_array)):
             log_array[i][k] = - np.log(np.power(y_0, 2) + np.power(position_array[k] - (limit[i]), 2))
 
     for i in range(np.size(limit)):
+        '''posterior_array is a vector containing posterior for each integer alpha values'''
         posterior_array[i] = np.sum(log_array[i])  # sums up all the log terms for a fixed alpha
 
     return posterior_array, limit
@@ -61,17 +63,53 @@ def posterior(position_array,x_0, y_0):
         posterior_array[i] = np.prod(likelihood_matrix[i][:])'''
 
 
+'''I haven't found an inbuild function in Python which lists all indices for maximum values in an array, so I do it manually, 
+we will use a large enough data set so that the posterior will converge to one peak'''
+def credible_interval_finder(posterior_array):
+    posterior_graph_area = np.sum(posterior_array)
+    normalizing_const = 1/posterior_graph_area
+    max_posterior = max(posterior_array)   # getting maximum posterior value
+    start_index = posterior_array.index(max_posterior)   # start_index tells the element index of maximum posterior
+    cred_interval = 0
+    x_left = start_index
+    left_line = start_index
+    right_line = start_index
+    while int(round(cred_interval*100)) < 96:
+        if start_index == posterior_array.index(max_posterior):
+             cred_interval = posterior_array[start_index]*normalizing_const
+             x_left = start_index - 1
+             start_index += 1
+        elif x_left > 0 and start_index < len(posterior_array)-1:
+             cred_interval = cred_interval + (posterior_array[x_left]+posterior_array[start_index]) * normalizing_const
+             left_line = x_left
+             right_line = start_index
+             x_left = x_left - 1
+             start_index += 1
+        elif start_index == (len(posterior_array)-1):
+             cred_interval = cred_interval + posterior_array[x_left]*normalizing_const
+             right_line = start_index
+             x_left = x_left - 1
+        elif x_left == 0:
+             cred_interval = cred_interval + posterior_array[start_index]*normalizing_const
+             left_line = x_left
+             start_index = start_index + 1
+
+
+    return left_line, right_line
+
+
 
 
 
 def light_house(x_0,y_0,N):
        angle_array = random_angle_generator(N)
-       position_array = position_converter(angle_array,x_0,y_0)
-       hist_range=[x_0-500,x_0+500]
+       position_array = position_converter(angle_array, x_0, y_0)
+       hist_range=[0, 1500]
 
        posterior_array, limit = posterior(position_array, x_0, y_0)
-
        position_average = np.sum(position_array)/N
+
+       left_line, right_line = credible_interval_finder(posterior_array)
 
        '''making subplots'''
 
@@ -94,10 +132,11 @@ def light_house(x_0,y_0,N):
        ax2.set_xlabel('Positions along the shore')
        ax2.set_ylabel('Posterior graph')
 
-       ax2.vlines(position_average, -500, 100, colors='g')
+       ax2.vlines(position_average, -2000, 100, colors='g')
+       ax2.hlines(min(posterior_array)- 100, left_line, right_line, colors='b')
 
        ax1.legend((N,round(position_average)), loc='upper right', shadow=True)
-       ax2.legend((position_max, (round(position_average))), loc='upper right', shadow=True)
+       ax2.legend((position_max, (round(position_average)), '95%'), loc='upper right', shadow=True)
 
        fig.tight_layout()
        plt.show()
@@ -107,8 +146,9 @@ def light_house(x_0,y_0,N):
 #######################################################################################################################
 # light_house-function input parameters : (x_0,y_0,N)
 # x_0,y_0= position of light house, N = number of data
+# the coast line is 400 meter long, i.e the x-array or posterior_array has 400 elements
 
-light_house(50,10,90)
+light_house(750,10,300)
 
 
 
