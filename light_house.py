@@ -63,8 +63,7 @@ def posterior(position_array,x_0, y_0):
         posterior_array[i] = np.prod(likelihood_matrix[i][:])'''
 
 
-'''I haven't found an inbuild function in Python which lists all indices for maximum values in an array, so I do it manually, 
-we will use a large enough data set so that the posterior will converge to one peak'''
+'''we will use a large enough data set so that the posterior will converge to one peak'''
 def credible_interval_finder(posterior_array):
     posterior_graph_area = np.sum(posterior_array)
     normalizing_const = 1/posterior_graph_area
@@ -97,6 +96,21 @@ def credible_interval_finder(posterior_array):
 
     return left_line, right_line
 
+def credible_interval_test(posterior_array):
+    posterior_graph_area = np.sum(posterior_array)
+    normalizing_const = 1/posterior_graph_area
+    max_posterior = max(posterior_array)   # getting maximum posterior value
+    start_index = posterior_array.index(max_posterior)   # start_index tells the element index of maximum posterior
+    cred_interval = 0
+    x_left = 0
+    left_line_test = 0
+    right_line_test = 0
+    while int(round(cred_interval*100)) < 50.5:
+        cred_interval = cred_interval + posterior_array[right_line_test]*normalizing_const
+        right_line_test += 1
+
+    return left_line_test, right_line_test
+
 
 
 
@@ -110,6 +124,9 @@ def light_house(x_0,y_0,N):
        position_average = np.sum(position_array)/N
 
        left_line, right_line = credible_interval_finder(posterior_array)
+
+       '''for testing if credible interval function seems realistic'''
+       left_line_test, right_line_test = credible_interval_test(posterior_array)
 
        '''making subplots'''
 
@@ -134,9 +151,10 @@ def light_house(x_0,y_0,N):
 
        ax2.vlines(position_average, -2000, 100, colors='g')
        ax2.hlines(min(posterior_array)- 100, left_line, right_line, colors='b')
+       ax2.hlines(min(posterior_array)-250,left_line_test, right_line_test, colors='r')
 
-       ax1.legend((N,round(position_average)), loc='upper right', shadow=True)
-       ax2.legend((position_max, (round(position_average)), '95%'), loc='upper right', shadow=True)
+       ax1.legend((N, round(position_average)), loc='upper right', shadow=True)
+       ax2.legend((position_max, (round(position_average)), 'CI=95%', '50%'), loc='upper right', shadow=True)
 
        fig.tight_layout()
        plt.show()
