@@ -55,15 +55,15 @@ def m_h(data_array, num_walk):
     x = 50
     y = 8
     mean = (x, y)
-    cov = [[1.5, 0], [0, 1.5]]  # covariance matrix
+    cov = [[0.8, 0], [0, 0.8]]  # covariance matrix
 
     x_array = [0]*num_walk
     y_array = [0]*num_walk
     z_array = [0]*num_walk
 
-    x_burn_array = [0] * (num_walk-800)
-    y_burn_array = [0] * (num_walk-800)
-    z_burn_array = [0] * (num_walk-800)
+    x_burn_array = [0] * (num_walk-700)
+    y_burn_array = [0] * (num_walk-700)
+    z_burn_array = [0] * (num_walk-700)
 
     for i in range(len(x_array)):
         U = np.random.random_sample()
@@ -84,11 +84,36 @@ def m_h(data_array, num_walk):
             z_array[i] = P_i
 
     for i in range(len(x_burn_array)):
-            x_burn_array[i] = x_array[i + 800]
-            y_burn_array[i] = y_array[i + 800]
-            z_burn_array[i] = z_array[i + 800]
+            x_burn_array[i] = x_array[i + 700]
+            y_burn_array[i] = y_array[i + 700]
+            z_burn_array[i] = z_array[i + 700]
 
-    return x_array, y_array, x_burn_array, y_burn_array
+    return x_array, y_array, x_burn_array, y_burn_array, z_burn_array
+
+
+def marg_x(limit_x, x_burn_array, y_burn_array):
+
+    marginal_x = np.zeros(np.size(limit_x))
+
+    for i in range(len(limit_x)-1):
+        for j in range(len(x_burn_array)):
+            if x_burn_array[j] <= limit_x[i+1] and x_burn_array[j] > limit_x[i]:
+                marginal_x[i] = marginal_x[i] + y_burn_array[j]
+
+    return marginal_x
+
+def marg_y(limit_y, x_burn_array, y_burn_array):
+
+    marginal_y = np.zeros(np.size(limit_y))
+
+    for i in range(len(limit_y)-1):
+        for j in range(len(y_burn_array)):
+            if y_burn_array[j] <= limit_y[i+1] and y_burn_array[j] > limit_y[i]:
+                marginal_y[i] = marginal_y[i] + x_burn_array[j]
+
+    return marginal_y
+
+
 
 
 
@@ -97,10 +122,22 @@ def light_house(x_0, y_0, N, shore_limit):
     '''light_house-function input parameters : (x_0,y_0,N)'''
     angle_array = random_angle_generator(N)
     data_array = position_converter(angle_array, x_0, y_0)
-    hist_range = [0, x_0 + 100]
 
-    num_walk = 2500  # num_walk = number of random walks
-    x_array, y_array, x_burn_array, y_burn_array = m_h(data_array, num_walk)
+    num_walk = 3000  # num_walk = number of random walks
+    x_array, y_array, x_burn_array, y_burn_array, z_burn_array = m_h(data_array, num_walk)
+
+    start_limit_x = x_0 - 20
+    start_limit_y = y_0 - 5
+    interval = 0.5
+
+    limit_x = np.arange(start_limit_x , x_0 + 20, interval)
+    limit_y = np.arange(start_limit_y, y_0 + 5, interval)
+
+    X, Y = np.meshgrid(limit_x, limit_y)
+
+
+    marginal_x = marg_x(limit_x, x_burn_array, y_burn_array)
+    marginal_y = marg_y(limit_y, x_burn_array, y_burn_array)
 
     '''making subplots'''
 
@@ -110,17 +147,29 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.subplot(221)
     plt.plot(x_array, y_array, '.', color='m', markersize=1)
     #plt.contour(x_array, y_array)
-    plt.xlabel('x')
     plt.ylabel('y')
     plt.title('MCMC (Gaussian proposal distribution) 2500 random walks', fontsize=10)
     plt.axis('equal')
 
+
+    plt.subplot(224)
+    plt.plot(limit_y, marginal_y)
+    plt.xlabel('y')
+    plt.title('Marginalization of x', fontsize=9)
+
+    plt.subplot(223)
+    plt.plot(limit_x, marginal_x)
+    plt.xlabel('x')
+    plt.title('Marginalization of y', fontsize=9)
+
+
     plt.subplot(222)
     plt.plot(x_burn_array, y_burn_array, '.', color='m', markersize=1)
-    plt.xlabel('x')
+    #plt.xlabel('x')
     plt.ylabel('y')
-    plt.title('MCMC (Gaussian proposal distribution) with 800 steps as burn-in period', fontsize=10)
+    plt.title('MCMC (Gaussian proposal distribution) with 1000 steps as burn-in period', fontsize=10)
     plt.axis('equal')
+
     plt.show()
 
 
