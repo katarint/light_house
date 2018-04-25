@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import quad
-import sympy as sy
-import pandas as pd
+import corner
+import seaborn as sns
 
 
 
@@ -55,15 +54,15 @@ def m_h(data_array, num_walk):
     x = 50
     y = 8
     mean = (x, y)
-    cov = [[0.8, 0], [0, 0.8]]  # covariance matrix
+    cov = [[1, 0], [0, 2.5]]  # covariance matrix
 
     x_array = [0]*num_walk
     y_array = [0]*num_walk
     z_array = [0]*num_walk
 
-    x_burn_array = [0] * (num_walk-700)
-    y_burn_array = [0] * (num_walk-700)
-    z_burn_array = [0] * (num_walk-700)
+    x_burn_array = [0] * (num_walk-1500)
+    y_burn_array = [0] * (num_walk-1500)
+    z_burn_array = [0] * (num_walk-1500)
 
     for i in range(len(x_array)):
         U = np.random.random_sample()
@@ -84,11 +83,20 @@ def m_h(data_array, num_walk):
             z_array[i] = P_i
 
     for i in range(len(x_burn_array)):
-            x_burn_array[i] = x_array[i + 700]
-            y_burn_array[i] = y_array[i + 700]
-            z_burn_array[i] = z_array[i + 700]
+            x_burn_array[i] = x_array[i + 1500]
+            y_burn_array[i] = y_array[i + 1500]
+            z_burn_array[i] = z_array[i + 1500]
 
     return x_array, y_array, x_burn_array, y_burn_array, z_burn_array
+
+def corner_plot(x_burn_array, y_burn_array):
+    '''making corner plots and contour plot of the results from Metropolis Hasting samplings'''
+
+    corner_array = np.zeros((len(x_burn_array), 2))
+    for i in range(len(x_burn_array)):
+        corner_array[i] = (x_burn_array[i], y_burn_array[i])
+
+    return corner_array
 
 
 def marg_x(limit_x, x_burn_array, y_burn_array):
@@ -123,7 +131,7 @@ def light_house(x_0, y_0, N, shore_limit):
     angle_array = random_angle_generator(N)
     data_array = position_converter(angle_array, x_0, y_0)
 
-    num_walk = 3000  # num_walk = number of random walks
+    num_walk = 9000  # num_walk = number of random walks
     x_array, y_array, x_burn_array, y_burn_array, z_burn_array = m_h(data_array, num_walk)
 
     start_limit_x = x_0 - 20
@@ -139,8 +147,10 @@ def light_house(x_0, y_0, N, shore_limit):
     marginal_x = marg_x(limit_x, x_burn_array, y_burn_array)
     marginal_y = marg_y(limit_y, x_burn_array, y_burn_array)
 
-    '''making subplots'''
+    corner_array = corner_plot(x_burn_array, y_burn_array)
 
+
+    '''making subplots'''
 
     plt.style.use('ggplot')
 
@@ -167,10 +177,20 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.plot(x_burn_array, y_burn_array, '.', color='m', markersize=1)
     #plt.xlabel('x')
     plt.ylabel('y')
-    plt.title('MCMC (Gaussian proposal distribution) with 1000 steps as burn-in period', fontsize=10)
+    plt.title('MCMC (Gaussian proposal distribution) with 1500 steps as burn-in period', fontsize=10)
     plt.axis('equal')
 
+
+    plt.style.use('ggplot')
+    figure = corner.corner(corner_array, bins = 20, quantiles=(0.16, 0.5, 0.84), show_titles=True, labels=[r"$position(x)$", r"$position(y)$"])
+
+    #sns.jointplot(x=df["sepal_length"], y_burn_array=df["sepal_width"], kind='kde')
+
     plt.show()
+
+
+
+
 
 
 

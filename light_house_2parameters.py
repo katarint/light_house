@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import quad
-import sympy as sy
-import pandas as pd
-
+import matplotlib.patches as mpatches
 
 
 def random_angle_generator(N):
@@ -43,8 +40,8 @@ def position_converter(angle_array, x_0, y_0):
 
 
 def posterior_2(data_array, x_0, y_0):
-    limit_x = np.arange(0.5, x_0 + 100, 0.25)
-    limit_y = np.arange(0.5, 10 + y_0, 0.25)
+    limit_x = np.arange(x_0 - 30, x_0 + 30, 0.25)
+    limit_y = np.arange(0, 15 + y_0, 0.25)
     x = limit_x
     y = limit_y
     X, Y = np.meshgrid(x, y)
@@ -56,20 +53,6 @@ def posterior_2(data_array, x_0, y_0):
 
     return X, Y, Z, limit_x, limit_y
 
-'''
-def log_posterior_2(x, y, data_array):
-
-    Z = np.zeros((np.size(y), (np.size(x))))  # Z: a matrix with ((#y-row,  #x-column))
-    Z_temp = np.zeros(np.size(data_array))
-
-    for j in np.arange(1, np.size(y)):
-        for i in np.arange(1, np.size(x)):
-            for k in np.arange(np.size(data_array)):
-                Z_temp[k] = np.log((np.power(y[j], 2) + np.power(data_array[k] - x[i], 2)))
-            Z[j][i] = np.size(data_array)*np.log(y[j]) - np.sum(Z_temp)
-
-    return Z
-'''
 
 def log_posterior_2(x, y, data_array):
     '''Calculates posterior and takes the logarithm'''
@@ -92,6 +75,7 @@ def log_posterior_2(x, y, data_array):
     return Z
 
 def marginal_x(Z, limit_x, limit_y):
+    '''Calculates the marginal distribution of x'''
 
     marg_posterior_x = [0, ]*np.size(limit_x)
 
@@ -100,10 +84,15 @@ def marginal_x(Z, limit_x, limit_y):
         for j in range(len(limit_y)):
             marg_posterior_x[i] = marg_posterior_x[i] + Z[j][i]*0.25
 
+    norm_x = norm_const_x(marg_posterior_x)
+    for i in range(len(limit_x)):  # normalizing the posterior
+        marg_posterior_x[i] = marg_posterior_x[i] * norm_x
+
     return marg_posterior_x
 
 
 def marginal_y(Z, limit_x, limit_y):
+    '''Calculates the marginal distribution of y'''
 
     marg_posterior_y = [0, ]*np.size(limit_y)
 
@@ -112,87 +101,67 @@ def marginal_y(Z, limit_x, limit_y):
         for j in range(len(limit_x)):
             marg_posterior_y[i] = marg_posterior_y[i] + Z[i][j]*0.25
 
-    return marg_posterior_y
+    norm_y = norm_const_y(marg_posterior_y)
 
-
-'''
-def marginal_x(data_array, x_0, y_0, shore_limit):
-
-    limit_x = np.arange(0.5, x_0 + 50, 0.5)
-    limit_y = np.arange(0.5, 10 + y_0, 0.5)
-    prob_array = [0]*len(limit_y)
-    marg_posterior_x = [0]*len(limit_x)
-
-    for i in range(len(limit_x)):
-        for j in range(len(limit_y)):
-            formula = np.size(data_array)*np.log(limit_y[j])
-            for n in range(len(data_array)):
-                formula = formula - np.log(limit_y[j]**2 + (data_array[n] - limit_x[i])**2)
-            prob_array[j] = 0.5*formula
-        marg_posterior_x[i] = np.sum(prob_array)
-
-    return marg_posterior_x
-
-
-def marginal_y(data_array, x_0, y_0, shore_limit):
-
-    limit_x = np.arange(0.5, x_0 + 50, 0.5)
-    limit_y = np.arange(0.5, 10 + y_0, 0.5)
-    prob_array = [0]*len(limit_x)
-    marg_posterior_y = [0]*len(limit_y)
-
-    for i in range(len(limit_y)):
-        for j in range(len(limit_x)):
-            formula = np.size(data_array) * np.log(limit_y[i]) - np.size(data_array)*np.log(np.pi)
-            for n in range(len(data_array)):
-                formula = formula - np.log(limit_y[i]**2 + (data_array[n] - limit_x[j])**2)
-            prob_array[j] = 0.5*formula
-        marg_posterior_y[i] = np.sum(prob_array)
+    for i in range(len(limit_y)):     # normalizing the posterior
+        marg_posterior_y[i] = marg_posterior_y[i]*norm_y
 
     return marg_posterior_y
-'''
+
+def norm_const_y(marg_posterior_y):
+    '''calculates normalization constant for marginal posterior for y'''
+    norm_y = 1/(np.sum(marg_posterior_y))
+    return norm_y
+
+def norm_const_x(marg_posterior_x):
+    '''calculates normalization constant for marginal posterior for x'''
+    norm_x = 1/(np.sum(marg_posterior_x))
+    return norm_x
+
+def cred_region_x(marg_posterior_x, limit_x):
+    cred_array = [0.5, 0.7, 0.9]
+    cred_index_x = [0, ]*np.size(cred_array)
+    levels = [0, ]*np.size(cred_array)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marg_posterior_x)  # the count starts with the initial start value
+        start_index_x = np.argmax(marg_posterior_x)  # start_index is the index of the element with highest value
+        k = 0
+        while count < cred_array[i]:
+              k += 1
+              count = count + marg_posterior_x[start_index_x+k] + marg_posterior_x[start_index_x-k]
+        cred_index_x[i] = k
+
+    start_index_x = np.argmax(marg_posterior_x)
+
+    return cred_index_x, start_index_x
+
+def cred_region_y(marg_posterior_y, limit_y):
+    cred_array = [0.5, 0.7, 0.9]
+    cred_index_y = [0, ]*np.size(cred_array)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marg_posterior_y)  # the count starts with the initial start value
+        start_index_y = np.argmax(marg_posterior_y)  # start_index is the index of the element with highest value
+        k = 0
+        while count < cred_array[i]:
+              k += 1
+              count = count + marg_posterior_y[start_index_y+k] + marg_posterior_y[start_index_y-k]
+        cred_index_y[i] = k
+
+    start_index_y = np.argmax(marg_posterior_y)
+
+    return cred_index_y, start_index_y
 
 
 
-'''
-def credible_interval_finder(posterior_array):
-    posterior_graph_area = np.sum(posterior_array)
-    normalizing_const = 1/posterior_graph_area
-    max_posterior = max(posterior_array)   # getting maximum posterior value
-    start_index = posterior_array.index(max_posterior)   # start_index tells the element index of maximum posterior
-    cred_interval = 0
-    x_left = start_index
-    left_line = start_index
-    right_line = start_index
-    while int(round(cred_interval*100)) < 96:
-        if start_index == posterior_array.index(max_posterior):
-             cred_interval = posterior_array[start_index]*normalizing_const
-             x_left = start_index - 1
-             start_index += 1
-        elif x_left > 0 and start_index < len(posterior_array)-1:
-             cred_interval = cred_interval + (posterior_array[x_left]+posterior_array[start_index]) * normalizing_const
-             left_line = x_left
-             right_line = start_index
-             x_left = x_left - 1
-             start_index += 1
-        elif start_index == (len(posterior_array)-1):
-             cred_interval = cred_interval + posterior_array[x_left]*normalizing_const
-             right_line = start_index
-             x_left = x_left - 1
-        elif x_left == 0:
-             cred_interval = cred_interval + posterior_array[start_index]*normalizing_const
-             left_line = x_left
-             start_index = start_index + 1
 
-
-    return left_line, right_line
-'''
 
 def light_house(x_0, y_0, N, shore_limit):
     '''light_house-function input parameters : (x_0,y_0,N)'''
     angle_array = random_angle_generator(N)
     data_array = position_converter(angle_array, x_0, y_0)
-    hist_range = [0, x_0 + 100]
+    hist_range = [50, x_0 + 150]
 
     #posterior_array, limit = posterior(position_array, limit, x_0, y_0)
 
@@ -206,43 +175,91 @@ def light_house(x_0, y_0, N, shore_limit):
 
     marg_posterior_y = marginal_y(Z, limit_x, limit_y)
 
+    cred_index_x, start_index_x= cred_region_x(marg_posterior_x, limit_x)
+    cred_index_y, start_index_y = cred_region_y(marg_posterior_y, limit_y)
+
     '''making subplots'''
 
-    '''Finding maximum value of posterior'''
-
-    #posterior_max = np.argmax(posterior_array)  # returns the index for the maximum value in posterior_array
-    #position_max = limit[posterior_max]  # finds the x-position for the best estimate
-
     plt.style.use('ggplot')
-
-    plt.subplot(221)
-    plt.hist(data_array, 'fd', hist_range, normed=False, weights=None, density=None)
-    plt.title('Uniformly distributed data')
-    plt.ylabel('count')
-    #plt.legend(N, loc='upper right', shadow=True, prop={'size': 10})
-
-    plt.subplot(224)
-    plt.contour(X, Y, Z, 4, colors='black')
-    plt.title('Prob(x,y|{Data},I) contour plot', fontsize=10)
-    plt.xlabel('x')
-    plt.ylabel('y')
-
-
+    '''
     plt.subplot(222)
-    plt.plot(limit_x, marg_posterior_x)
-    #plt.vlines(position_average, -2000, 100, colors='g')
-    #plt.hlines(min(posterior_array) - 100, left_line, right_line, colors='b')
-    plt.title('P(x|I) vs. x', fontsize=10)
-    plt.ylabel('prob(x|I)')
-    plt.tick_params(axis='y')
-    #max_posterior_x = max(marg_posterior_x)
-    #max_index_x = marg_posterior_x.index(max_posterior_x)
-    #plt.legend((limit_x[max_index_x]), loc='upper right', shadow=True, prop={'size': 10})
+    plt.hist(data_array, 'fd', hist_range, normed=False, weights=None, density=None)
+    plt.title('Histogram of data along the shore')
+    plt.ylabel('count')
+    plt.xlabel('x', fontsize=14)
+    plt.tick_params(axis='x', which='major', labelsize=14)
+    plt.tick_params(axis='y', which='major', labelsize=14)
+    #plt.legend(N, loc='upper right', shadow=True, prop={'size': 10})
+    '''
 
-    plt.subplot(223)
-    plt.plot(limit_y, marg_posterior_y)
-    plt.ylabel('prob(y|I)')
-    plt.xlabel('y')
+    ax1 = plt.subplot(223)
+    plt.contour(X, Y, Z, 3, colors='k')
+    plt.xlabel('x', fontsize=15)
+    plt.ylabel('y', fontsize=15)
+    plt.tick_params(axis='x', which='major', labelsize=14)
+    plt.tick_params(axis='y', which='major', labelsize=14)
+    ax1.set_xlim(x_0 - 10, x_0 + 10)
+    ax1.set_ylim(0, y_0 + 15)
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[0]], ls=':', color='g')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[0]], ls=':', color='g')
+
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='k')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='k')
+
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='r')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='r')
+
+    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='r')
+    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='r')
+
+
+
+
+    ax2 = plt.subplot(221)
+    plt.plot(limit_x, marg_posterior_x)
+    plt.title('Marginal distribution for x', fontsize=15)
+    plt.ylabel('prob(x|D,I)', fontsize=14)
+    plt.tick_params(axis='x', which='major', labelsize=14)
+    plt.tick_params(axis='y', which='major', labelsize=14)
+    ax2.set_xlim(x_0 - 10, x_0 + 10)
+
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[0]], ls=':', color='g')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[0]], ls=':', color='g')
+
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='k')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='k')
+
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='r')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='r')
+
+    green_patch = mpatches.Patch(color='g', label= '50%', ls=':')
+    black_patch = mpatches.Patch(color='k', label= '70%', ls=':')
+    red_patch = mpatches.Patch(color='r', label= '90%', ls=':')
+
+    plt.legend(handles=[green_patch, black_patch, red_patch], fontsize=15)
+
+
+
+    ax3 = plt.subplot(224)
+    plt.plot(marg_posterior_y, limit_y)
+    plt.xlabel('prob(y|D,I)', fontsize=14)
+    plt.title('Marginal distribution for y', fontsize=15)
+    plt.tick_params(axis='x', which='major', labelsize=14)
+    plt.tick_params(axis='y', which='major', labelsize=14)
+    ax3.set_ylim(0, y_0 + 15)
+
+    #plt.axhline(y=limit_y[start_index_y + cred_index_y[0]], ls=':', color='g')
+    #plt.axhline(y=limit_y[start_index_y - cred_index_y[0]], ls=':', color='g')
+
+    #plt.axhline(y=limit_y[start_index_y + cred_index_y[1]], ls=':', color='k')
+    #plt.axhline(y=limit_y[start_index_y - cred_index_y[1]], ls=':', color='k')
+
+    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='r')
+    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='r')
+
+    plt.legend(handles=[red_patch], fontsize=15)
+
+
 
     plt.show()
 
@@ -251,7 +268,7 @@ def light_house(x_0, y_0, N, shore_limit):
 # light_house-function input parameters : (x_0, y_0, N, shore_limit)
 # x_0,y_0= position of light house, N = number of data, shore_limit = distance of the shore that we want to study
 
-light_house(100, 10, 90, 400)
+light_house(200, 10, 120, 400)
 
 
 

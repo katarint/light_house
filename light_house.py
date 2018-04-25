@@ -1,69 +1,99 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
-# Generates a vector containing N random angles ranging from 0 to pi
+
 def random_angle_generator(N):
+    '''Generates a vector containing N random angles ranging from 0 to pi'''
     angle_array = np.random.uniform(0, np.pi, size=N)
     return angle_array
 
 
 
-# converts the generated angles into x-positions
+
 def position_converter(angle_array, x_0, y_0):
-    position_array = np.zeros(len(angle_array))
+    '''converts the generated angles into x-positions (or data values)'''
+    data_array = np.zeros(len(angle_array))
     for i in range(len(angle_array)):
         if angle_array[i] == 0:
             angle_array[i] = 0.001
-            position_array[i] = x_0 - y_0/np.tan(angle_array[i])
+            data_array[i] = x_0 - y_0/np.tan(angle_array[i])
 
         elif angle_array[i] == 2*np.pi:
              angle_array[i] = np.pi - 0.001
-             position_array = x_0 + abs(y_0/(np.tan(angle_array[i])-np.pi/2))
+             data_array = x_0 + abs(y_0/(np.tan(angle_array[i])-np.pi/2))
 
         elif angle_array[i] == np.pi/2:
-            position_array[i] =x_0
+            data_array[i] =x_0
 
         elif angle_array[i] > np.pi/2 and angle_array[i] != np.pi:
-            position_array[i] = x_0 + y_0 / (np.tan(angle_array[i]-np.pi/2))
+            data_array[i] = x_0 + y_0 / (np.tan(angle_array[i]-np.pi/2))
 
         elif angle_array[i] < np.pi/2 and angle_array[i] != 0:
-            position_array[i] = x_0 - y_0/np.tan(angle_array[i])
+            data_array[i] = x_0 - y_0/np.tan(angle_array[i])
 
-    return position_array
+    return data_array
 
+def mean_value(data_array):
 
-def posterior(position_array,x_0, y_0):
-    # using a flat prior, the x_0 input is not necessary since an arbitrary limit/range can be used
-    limit = np.arange(0, 1500)
-    log_array = np.zeros((np.size(limit), np.size(position_array)))
-    posterior_array = [0]*len(limit)
-    #posterior_array = np.zeros(np.size(limit))
-
-    for i in range(np.size(limit)):
-        for k in range(0, np.size(position_array)):
-            log_array[i][k] = - np.log(np.power(y_0, 2) + np.power(position_array[k] - (limit[i]), 2))
-
-    for i in range(np.size(limit)):
-        '''posterior_array is a vector containing posterior for each integer alpha values'''
-        posterior_array[i] = np.sum(log_array[i])  # sums up all the log terms for a fixed alpha
-
-    return posterior_array, limit
+    mean = int(round(np.sum(data_array) / np.size(data_array)))
+    return mean
 
 
-'''The function below estimated posterior without taking the log, this will result in posterior --> 0 as the data set
-    increases ( which is incorrect). 
-    
-    likelihood_matrix = np.zeros((np.size(limit), np.size(position_array)))
-    posterior_array = np.zeros(len(limit))
-    for i in range(np.size(limit)):
-            for j in range(0,len(position_array)):
-                likelihood_matrix[i][j] = y_0/(np.pi*(np.power(y_0, 2) + np.power((position_array[j] - limit[i]), 2)))
-    for i in range(0, np.size(limit)):
-        posterior_array[i] = np.prod(likelihood_matrix[i][:])'''
+
+def posterior(data_array, x_0, y_0, prior, mean):
+    '''creates a vector containing all the posteriors for every position x. The posterior is scaled for a nicer plot.'''
 
 
-'''we will use a large enough data set so that the posterior will converge to one peak'''
+    x_range = np.arange(x_0-70 , x_0+70, 0.1)
+
+    posterior_array = [0, ]*np.size(x_range)
+    log_array, best_estimate = log_posterior(data_array, y_0, x_range, prior)   # calling the function log_posterior
+
+    normal_const = normalization(log_array, x_range)     # the function normalization calculates the global likelihood
+    for i in range(len(x_range)):
+        posterior_array[i] = np.exp(log_array[i])*normal_const     # taking the exponential of every elements in log_array
+
+    #print(np.sum(posterior_array))   # to check if normal_const was calculated correctely
+
+    return posterior_array, x_range, best_estimate
+
+
+
+def log_posterior(data_array, y_0, x_range, prior):
+    '''log_posterior takes the logarithm of posterior and scales it. Returning a vector log_array'''
+
+    log_array = [0, ]*np.size(x_range)
+
+    for i in range(np.size(x_range)):
+        formula = 0
+        for k in range(len(data_array)):
+            formula = formula - np.log(y_0**2 + (data_array[k] - x_range[i])**2)
+        log_array[i] = formula + np.log(prior)
+
+    max_log_array = max(log_array)
+    best_estimate_index = log_array.index(max_log_array)
+    best_estimate = int(round(x_range[best_estimate_index]))
+
+    for i in range(len(log_array)):
+        log_array[i] = log_array[i] - max_log_array
+
+    return log_array, best_estimate
+
+def normalization(log_array, x_range):
+    '''calculates the normalization constant (= global likelihood) for the posterior pdf'''
+
+    temporary = [0, ]*np.size(x_range)
+    for i in range(len(x_range)):
+        temporary[i] = np.exp(log_array[i])     # taking the exponential of every elements in log_array
+
+    normal_const = 1/np.sum(temporary)
+
+    return normal_const
+
+
+
 def credible_interval_finder(posterior_array):
     posterior_graph_area = np.sum(posterior_array)
     normalizing_const = 1/posterior_graph_area
@@ -115,58 +145,56 @@ def credible_interval_test(posterior_array):
 
 
 
-def light_house(x_0,y_0,N):
+def light_house(x_0, y_0, N, limit):
        angle_array = random_angle_generator(N)
-       position_array = position_converter(angle_array, x_0, y_0)
-       hist_range=[0, 1500]
+       data_array = position_converter(angle_array, x_0, y_0)
+       hist_range=[x_0 -100, x_0 + 100]
+       mean = mean_value(data_array)
 
-       posterior_array, limit = posterior(position_array, x_0, y_0)
-       position_average = np.sum(position_array)/N
+       prior = 1/limit   # choosing a uniform (flat) prior
 
-       left_line, right_line = credible_interval_finder(posterior_array)
-
-       '''for testing if credible interval function seems realistic'''
-       left_line_test, right_line_test = credible_interval_test(posterior_array)
+       posterior_array, x_range, best_estimate = posterior(data_array, x_0, y_0, prior, mean)
 
        '''making subplots'''
 
-       '''Finding maximum value of posterior'''
 
        posterior_max = np.argmax(posterior_array)    # returns the index for the maximum value in posterior_array
-       position_max = limit[posterior_max]           # finds the x-position for the best estimate
 
        plt.style.use('ggplot')
-       fig, axes = plt.subplots(2, sharex=True)
-       ax1, ax2 = axes.ravel()
-       ax1.hist(position_array, 'fd', hist_range, normed=False, weights=None, density=None)
 
-       ax2.plot(limit, posterior_array)
+       plt.style.use('ggplot')
 
-       ax1.set_title('Light house: data histogram and posterior graph')
-       ax1.set_xlabel('Positions along the shore')
-       ax1.set_ylabel('Counts')
+       plt.subplot(121)
+       plt.hist(data_array, 'fd', hist_range, normed=False, weights=None, density=None)
+       plt.xlabel('Positions along the shore', fontsize=15)
+       plt.ylabel('Counts', fontsize=15)
+       plt.title('Light house data histogram', fontsize=15)
+       plt.legend((N, round(mean)), loc='upper right', shadow=True, fontsize=15)
+       plt.tick_params(axis='x', which='major', labelsize=14)
+       plt.tick_params(axis='y', which='major', labelsize=14)
 
-       ax2.set_xlabel('Positions along the shore')
-       ax2.set_ylabel('Posterior graph')
 
-       ax2.vlines(position_average, -2000, 100, colors='g')
-       ax2.hlines(min(posterior_array)- 100, left_line, right_line, colors='b')
-       ax2.hlines(min(posterior_array)-250,left_line_test, right_line_test, colors='r')
+       plt.subplot(122)
+       plt.plot(x_range, posterior_array)
+       plt.xlabel('Positions along the shore', fontsize=15)
+       plt.ylabel('P(x|y,I)', fontsize=15)
+       plt.title('Light house posterior pdf', fontsize=15)
+       plt.vlines(mean, 0.01, 0.06, colors='g')
+       red_patch = mpatches.Patch(color='orangered', label=best_estimate)
+       green_patch = mpatches.Patch(color='g', label=mean)
+       plt.legend(handles=[red_patch, green_patch], fontsize=15)
+       plt.tick_params(axis='x', which='major', labelsize=14)
+       plt.tick_params(axis='y', which='major', labelsize=14)
 
-       ax1.legend((N, round(position_average)), loc='upper right', shadow=True)
-       ax2.legend((position_max, (round(position_average)), 'CI=95%', '50%'), loc='upper right', shadow=True)
-
-       fig.tight_layout()
        plt.show()
 
 
-
 #######################################################################################################################
-# light_house-function input parameters : (x_0,y_0,N)
+# light_house-function input parameters : (x_0, y_0, N, limit)
 # x_0,y_0= position of light house, N = number of data
-# the coast line is 400 meter long, i.e the x-array or posterior_array has 400 elements
+# the coast line is 400 meter long (limit = 400)
 
-light_house(750,10,300)
+light_house(200, 10, 500, 400)
 
 
 
