@@ -46,16 +46,16 @@ def posterior(data_array, x_0, y_0, prior, mean):
     '''creates a vector containing all the posteriors for every position x. The posterior is scaled for a nicer plot.'''
 
 
-    x_range = np.arange(x_0-70 , x_0+70, 0.1)
+    x_range = np.arange(x_0-150 , x_0+150, 0.1)   # x ranges from x_0 -150 to x_0 + 150, with dx = 0.1
 
     posterior_array = [0, ]*np.size(x_range)
     log_array, best_estimate = log_posterior(data_array, y_0, x_range, prior)   # calling the function log_posterior
 
     normal_const = normalization(log_array, x_range)     # the function normalization calculates the global likelihood
     for i in range(len(x_range)):
-        posterior_array[i] = np.exp(log_array[i])*normal_const     # taking the exponential of every elements in log_array
+        posterior_array[i] = np.exp(log_array[i])*normal_const    # taking the exponential of every elements in log_array
 
-    #print(np.sum(posterior_array))   # to check if normal_const was calculated correctely
+    print(np.sum(posterior_array)*0.1)   # to check if normal_const was calculated correctly
 
     return posterior_array, x_range, best_estimate
 
@@ -88,7 +88,7 @@ def normalization(log_array, x_range):
     for i in range(len(x_range)):
         temporary[i] = np.exp(log_array[i])     # taking the exponential of every elements in log_array
 
-    normal_const = 1/np.sum(temporary)
+    normal_const = 1/(np.sum(temporary)*0.1)
 
     return normal_const
 
@@ -148,7 +148,7 @@ def credible_interval_test(posterior_array):
 def light_house(x_0, y_0, N, limit):
        angle_array = random_angle_generator(N)
        data_array = position_converter(angle_array, x_0, y_0)
-       hist_range=[x_0 -100, x_0 + 100]
+       hist_range=[x_0 -150, x_0 + 150]
        mean = mean_value(data_array)
 
        prior = 1/limit   # choosing a uniform (flat) prior
@@ -172,19 +172,22 @@ def light_house(x_0, y_0, N, limit):
        plt.legend((N, round(mean)), loc='upper right', shadow=True, fontsize=15)
        plt.tick_params(axis='x', which='major', labelsize=14)
        plt.tick_params(axis='y', which='major', labelsize=14)
+       plt.text(80, 60, "A", {'color': 'k', 'fontsize': 14})
 
 
-       plt.subplot(122)
+       ax2 = plt.subplot(122)
        plt.plot(x_range, posterior_array)
        plt.xlabel('Positions along the shore', fontsize=15)
        plt.ylabel('P(x|y,I)', fontsize=15)
        plt.title('Light house posterior pdf', fontsize=15)
-       plt.vlines(mean, 0.01, 0.06, colors='g')
+       plt.vlines(mean, 0.01, 0.4, colors='g')
        red_patch = mpatches.Patch(color='orangered', label=best_estimate)
        green_patch = mpatches.Patch(color='g', label=mean)
        plt.legend(handles=[red_patch, green_patch], fontsize=15)
        plt.tick_params(axis='x', which='major', labelsize=14)
        plt.tick_params(axis='y', which='major', labelsize=14)
+       plt.text(70, 0.6, "B", {'color': 'k', 'fontsize': 14})
+       ax2.set_xlim(x_0-150, x_0 +150)
 
        plt.show()
 
