@@ -88,6 +88,8 @@ def marginal_x(Z, limit_x, limit_y):
     for i in range(len(limit_x)):  # normalizing the posterior
         marg_posterior_x[i] = marg_posterior_x[i] * norm_x
 
+    print(np.sum(marg_posterior_x)*0.25)
+
     return marg_posterior_x
 
 
@@ -106,18 +108,21 @@ def marginal_y(Z, limit_x, limit_y):
     for i in range(len(limit_y)):     # normalizing the posterior
         marg_posterior_y[i] = marg_posterior_y[i]*norm_y
 
+    print(np.sum(marg_posterior_y) * 0.25)
+
     return marg_posterior_y
 
 def norm_const_y(marg_posterior_y):
     '''calculates normalization constant for marginal posterior for y'''
-    norm_y = 1/(np.sum(marg_posterior_y))
+    norm_y = 1/(np.sum(marg_posterior_y)*0.25)
     return norm_y
 
 def norm_const_x(marg_posterior_x):
     '''calculates normalization constant for marginal posterior for x'''
-    norm_x = 1/(np.sum(marg_posterior_x))
+    norm_x = 1/(np.sum(marg_posterior_x)*0.25)
     return norm_x
 
+'''
 def cred_region_x(marg_posterior_x, limit_x):
     cred_array = [0.5, 0.7, 0.9]
     cred_index_x = [0, ]*np.size(cred_array)
@@ -129,27 +134,42 @@ def cred_region_x(marg_posterior_x, limit_x):
         k = 0
         while count < cred_array[i]:
               k += 1
-              count = count + marg_posterior_x[start_index_x+k] + marg_posterior_x[start_index_x-k]
+              count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
         cred_index_x[i] = k
 
     start_index_x = np.argmax(marg_posterior_x)
 
     return cred_index_x, start_index_x
+'''
 
-def cred_region_y(marg_posterior_y, limit_y):
+def cred_region_x(marg_posterior_x):
     cred_array = [0.5, 0.7, 0.9]
-    cred_index_y = [0, ]*np.size(cred_array)
+    cred_index_x = [0, ]*np.size(cred_array)
+    start_index_x = np.argmax(marg_posterior_x)
 
     for i in range(len(cred_array)):
-        count = np.amax(marg_posterior_y)  # the count starts with the initial start value
-        start_index_y = np.argmax(marg_posterior_y)  # start_index is the index of the element with highest value
+        count = np.amax(marg_posterior_x)*0.25  # the count starts with the initial start value
         k = 0
         while count < cred_array[i]:
               k += 1
-              count = count + marg_posterior_y[start_index_y+k] + marg_posterior_y[start_index_y-k]
-        cred_index_y[i] = k
+              count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
+        cred_index_x[i] = k
 
-    start_index_y = np.argmax(marg_posterior_y)
+    return cred_index_x, start_index_x
+
+def cred_region_y(marg_posterior_y):
+    cred_array = [0.5, 0.7, 0.9]
+    cred_index_y = [0, ]*np.size(cred_array)
+
+    start_index_y = np.argmax(marg_posterior_y)  # start_index is the index of the element with highest value
+
+    for i in range(len(cred_array)):
+        count = np.amax(marg_posterior_y)*0.25  # the count starts with the initial start value
+        k = 0
+        while count < cred_array[i]:
+                k += 1
+                count = count + marg_posterior_y[start_index_y+k]*0.25 + marg_posterior_y[start_index_y-k]*0.25
+        cred_index_y[i] = k
 
     return cred_index_y, start_index_y
 
@@ -175,8 +195,8 @@ def light_house(x_0, y_0, N, shore_limit):
 
     marg_posterior_y = marginal_y(Z, limit_x, limit_y)
 
-    cred_index_x, start_index_x= cred_region_x(marg_posterior_x, limit_x)
-    cred_index_y, start_index_y = cred_region_y(marg_posterior_y, limit_y)
+    cred_index_x, start_index_x = cred_region_x(marg_posterior_x)
+    cred_index_y, start_index_y = cred_region_y(marg_posterior_y)
 
     '''making subplots'''
 
@@ -212,6 +232,8 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='r')
     plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='r')
 
+    plt.text(191, 22, "B", {'color': 'k', 'fontsize': 14})
+
 
 
 
@@ -237,6 +259,7 @@ def light_house(x_0, y_0, N, shore_limit):
     red_patch = mpatches.Patch(color='r', label= '90%', ls=':')
 
     plt.legend(handles=[green_patch, black_patch, red_patch], fontsize=15)
+    plt.text(191, 0.065, "A", {'color': 'k', 'fontsize': 14})
 
 
 
@@ -256,8 +279,11 @@ def light_house(x_0, y_0, N, shore_limit):
 
     plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='r')
     plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='r')
+    plt.plot(marg_posterior_y, limit_y,  '.')
 
     plt.legend(handles=[red_patch], fontsize=15)
+
+    plt.text(0.075, 17, "C", {'color': 'k', 'fontsize': 14})
 
 
 
