@@ -122,25 +122,6 @@ def norm_const_x(marg_posterior_x):
     norm_x = 1/(np.sum(marg_posterior_x)*0.25)
     return norm_x
 
-'''
-def cred_region_x(marg_posterior_x, limit_x):
-    cred_array = [0.5, 0.7, 0.9]
-    cred_index_x = [0, ]*np.size(cred_array)
-    levels = [0, ]*np.size(cred_array)
-
-    for i in range(len(cred_array)):
-        count = np.amax(marg_posterior_x)  # the count starts with the initial start value
-        start_index_x = np.argmax(marg_posterior_x)  # start_index is the index of the element with highest value
-        k = 0
-        while count < cred_array[i]:
-              k += 1
-              count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
-        cred_index_x[i] = k
-
-    start_index_x = np.argmax(marg_posterior_x)
-
-    return cred_index_x, start_index_x
-'''
 
 def cred_region_x(marg_posterior_x):
     cred_array = [0.5, 0.7, 0.9]
@@ -201,16 +182,7 @@ def light_house(x_0, y_0, N, shore_limit):
     '''making subplots'''
 
     plt.style.use('ggplot')
-    '''
-    plt.subplot(222)
-    plt.hist(data_array, 'fd', hist_range, normed=False, weights=None, density=None)
-    plt.title('Histogram of data along the shore')
-    plt.ylabel('count')
-    plt.xlabel('x', fontsize=14)
-    plt.tick_params(axis='x', which='major', labelsize=14)
-    plt.tick_params(axis='y', which='major', labelsize=14)
-    #plt.legend(N, loc='upper right', shadow=True, prop={'size': 10})
-    '''
+
 
     ax1 = plt.subplot(223)
     plt.contour(X, Y, Z, 3, colors='k')
@@ -235,8 +207,6 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.text(191, 22, "B", {'color': 'k', 'fontsize': 14})
 
 
-
-
     ax2 = plt.subplot(221)
     plt.plot(limit_x, marg_posterior_x)
     plt.title('Marginal distribution for x', fontsize=15)
@@ -259,7 +229,9 @@ def light_house(x_0, y_0, N, shore_limit):
     red_patch = mpatches.Patch(color='r', label= '90%', ls=':')
 
     plt.legend(handles=[green_patch, black_patch, red_patch], fontsize=15)
-    plt.text(191, 0.065, "A", {'color': 'k', 'fontsize': 14})
+    plt.text(191, 0.3, "A", {'color': 'k', 'fontsize': 14})
+
+    plt.plot(limit_x, marg_posterior_x, '.')
 
 
 
@@ -283,7 +255,7 @@ def light_house(x_0, y_0, N, shore_limit):
 
     plt.legend(handles=[red_patch], fontsize=15)
 
-    plt.text(0.075, 17, "C", {'color': 'k', 'fontsize': 14})
+    plt.text(0.27, 16, "C", {'color': 'k', 'fontsize': 14})
 
 
 

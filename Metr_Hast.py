@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import corner
-import seaborn as sns
-
+import matplotlib.patches as mpatches
 
 
 def random_angle_generator(N):
@@ -51,10 +50,11 @@ def posterior(data_array, x, y):
 
 
 def m_h(data_array, num_walk):
-    x = 50
+    '''using MCMC with Metropolis algorithm'''
+    x = 100
     y = 8
     mean = (x, y)
-    cov = [[1, 0], [0, 2.5]]  # covariance matrix
+    cov = [[0.93, 0], [0, 1.3]]  # covariance matrix
 
     x_array = [0]*num_walk
     y_array = [0]*num_walk
@@ -65,22 +65,22 @@ def m_h(data_array, num_walk):
     z_burn_array = [0] * (num_walk-1500)
 
     for i in range(len(x_array)):
-        U = np.random.random_sample()
-        P_i = posterior(data_array, x, y)
+        u = np.random.random_sample()   # u is taken randomly from a normal distribution
+        p_i = posterior(data_array, x, y)
         x_i, y_i = np.random.multivariate_normal(mean, cov).T
-        P_f = posterior(data_array, x_i, y_i)
-        r = P_f / P_i
-        if U <= r:
+        p_f = posterior(data_array, x_i, y_i)
+        r = p_f / p_i
+        if u <= r:
             x_array[i] = x_i
             y_array[i] = y_i
-            z_array[i] = P_f
+            z_array[i] = p_f
             x = x_i
             y = y_i
             mean = (x_i, y_i)
         else:
             x_array[i] = x
             y_array[i] = y
-            z_array[i] = P_i
+            z_array[i] = p_i
 
     for i in range(len(x_burn_array)):
             x_burn_array[i] = x_array[i + 1500]
@@ -106,23 +106,41 @@ def marg_x(limit_x, x_burn_array, y_burn_array):
     for i in range(len(limit_x)-1):
         for j in range(len(x_burn_array)):
             if x_burn_array[j] <= limit_x[i+1] and x_burn_array[j] > limit_x[i]:
-                marginal_x[i] = marginal_x[i] + y_burn_array[j]
+                marginal_x[i] = marginal_x[i] + y_burn_array[j]*0.25
+
+    norm_x = norm_const_x(marginal_x)
+
+    for i in range(len(marginal_x)):
+        marginal_x[i] = marginal_x[i]*norm_x
 
     return marginal_x
 
 def marg_y(limit_y, x_burn_array, y_burn_array):
 
     marginal_y = np.zeros(np.size(limit_y))
+    print(np.size(x_burn_array))
+    print(np.size(y_burn_array))
 
     for i in range(len(limit_y)-1):
         for j in range(len(y_burn_array)):
             if y_burn_array[j] <= limit_y[i+1] and y_burn_array[j] > limit_y[i]:
-                marginal_y[i] = marginal_y[i] + x_burn_array[j]
+                marginal_y[i] = marginal_y[i] + x_burn_array[j]*0.25
+
+    norm_y = norm_const_y(marginal_y)
+
+    for i in range(len(marginal_y)):
+        marginal_y[i] = marginal_y[i]*norm_y
 
     return marginal_y
 
 
+def norm_const_x(marginal_x):
+    norm_x = 1/(np.sum(marginal_x*0.25))
+    return norm_x
 
+def norm_const_y(marginal_y):
+    norm_y = 1/(np.sum(marginal_y*0.25))
+    return norm_y
 
 
 
@@ -136,7 +154,7 @@ def light_house(x_0, y_0, N, shore_limit):
 
     start_limit_x = x_0 - 20
     start_limit_y = y_0 - 5
-    interval = 0.5
+    interval = 0.25
 
     limit_x = np.arange(start_limit_x , x_0 + 20, interval)
     limit_y = np.arange(start_limit_y, y_0 + 5, interval)
@@ -158,33 +176,35 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.plot(x_array, y_array, '.', color='m', markersize=1)
     #plt.contour(x_array, y_array)
     plt.ylabel('y')
-    plt.title('MCMC (Gaussian proposal distribution) 2500 random walks', fontsize=10)
+    plt.title('MCMC Metropolis Hastings, 9000 random walks', fontsize=10)
     plt.axis('equal')
 
 
     plt.subplot(224)
     plt.plot(limit_y, marginal_y)
     plt.xlabel('y')
-    plt.title('Marginalization of x', fontsize=9)
+    plt.title('Marginal posterior for y', fontsize=9)
+    y_patch = mpatches.Patch(color='orangered', label=limit_y[np.argmax(marginal_y)])
+    plt.legend(handles=[y_patch])
 
     plt.subplot(223)
     plt.plot(limit_x, marginal_x)
     plt.xlabel('x')
-    plt.title('Marginalization of y', fontsize=9)
+    plt.title('Marginal posterior for x', fontsize=9)
+    x_patch = mpatches.Patch(color='orangered', label=limit_x[np.argmax(marginal_x)])
+    plt.legend(handles=[x_patch])
 
 
     plt.subplot(222)
     plt.plot(x_burn_array, y_burn_array, '.', color='m', markersize=1)
     #plt.xlabel('x')
     plt.ylabel('y')
-    plt.title('MCMC (Gaussian proposal distribution) with 1500 steps as burn-in period', fontsize=10)
+    plt.title('MCMC with 1500 steps as burn-in period', fontsize=10)
     plt.axis('equal')
 
 
-    plt.style.use('ggplot')
-    figure = corner.corner(corner_array, bins = 20, quantiles=(0.16, 0.5, 0.84), show_titles=True, labels=[r"$position(x)$", r"$position(y)$"])
+    figure = corner.corner(corner_array, bins = 20, quantiles=(0.16, 0.5, 0.84), show_titles=True, labels=[r"$position(x)$", r"$position(y)$"], fontsize=15)
 
-    #sns.jointplot(x=df["sepal_length"], y_burn_array=df["sepal_width"], kind='kde')
 
     plt.show()
 
@@ -200,7 +220,7 @@ def light_house(x_0, y_0, N, shore_limit):
 # light_house-function input parameters : (x_0, y_0, N, shore_limit)
 # x_0,y_0= position of light house, N = number of data, shore_limit = distance of the shore that we want to study
 
-light_house(100, 10, 90, 400)
+light_house(200, 10, 93, 400)
 
 
 

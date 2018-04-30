@@ -46,7 +46,7 @@ def posterior(data_array, x_0, y_0, prior, mean):
     '''creates a vector containing all the posteriors for every position x. The posterior is scaled for a nicer plot.'''
 
 
-    x_range = np.arange(x_0-150 , x_0+150, 0.1)   # x ranges from x_0 -150 to x_0 + 150, with dx = 0.1
+    x_range = np.arange(x_0-200 , x_0+200, 0.1)   # x ranges from x_0 -150 to x_0 + 150, with dx = 0.1
 
     posterior_array = [0, ]*np.size(x_range)
     log_array, best_estimate = log_posterior(data_array, y_0, x_range, prior)   # calling the function log_posterior
@@ -172,7 +172,6 @@ def light_house(x_0, y_0, N, limit):
        plt.legend((N, round(mean)), loc='upper right', shadow=True, fontsize=15)
        plt.tick_params(axis='x', which='major', labelsize=14)
        plt.tick_params(axis='y', which='major', labelsize=14)
-       plt.text(80, 60, "A", {'color': 'k', 'fontsize': 14})
 
 
        ax2 = plt.subplot(122)
@@ -186,8 +185,7 @@ def light_house(x_0, y_0, N, limit):
        plt.legend(handles=[red_patch, green_patch], fontsize=15)
        plt.tick_params(axis='x', which='major', labelsize=14)
        plt.tick_params(axis='y', which='major', labelsize=14)
-       plt.text(70, 0.6, "B", {'color': 'k', 'fontsize': 14})
-       ax2.set_xlim(x_0-150, x_0 +150)
+       ax2.set_xlim(x_0-200, x_0 +200)
 
        plt.show()
 
