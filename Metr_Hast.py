@@ -54,7 +54,7 @@ def m_h(data_array, num_walk):
     x = 100
     y = 8
     mean = (x, y)
-    cov = [[0.95, 0], [0, 1.5]]  # covariance matrix
+    cov = [[0.95, 0], [0, 1.3]]  # covariance matrix
 
     x_array = [0]*num_walk
     y_array = [0]*num_walk
@@ -118,8 +118,6 @@ def marg_x(limit_x, x_burn_array, y_burn_array):
 def marg_y(limit_y, x_burn_array, y_burn_array):
 
     marginal_y = np.zeros(np.size(limit_y))
-    print(np.size(x_burn_array))
-    print(np.size(y_burn_array))
 
     for i in range(len(limit_y)-1):
         for j in range(len(y_burn_array)):
@@ -211,14 +209,13 @@ def light_house(x_0, y_0, N, shore_limit):
     #plt.contour(x_array, y_array)
     plt.ylabel('y')
     plt.xlabel('x')
-    plt.title('MCMC Metropolis Hastings, 9000 random walks', fontsize=10)
+    plt.title('MCMC Metropolis Hastings, 9000 random walks', fontsize=12)
     plt.axis('equal')
 
 
     ax2=plt.subplot(224)
     plt.plot(limit_y, marginal_y)
     plt.xlabel('y')
-    plt.title('Marginal distribution for y', fontsize=9)
     y_patch = mpatches.Patch(color='green', label=limit_y[np.argmax(marginal_y)])
     plt.legend(handles=[y_patch])
     plt.axvline(x=limit_y[np.argmax(marginal_y)], ls='--', color='green')
@@ -231,7 +228,6 @@ def light_house(x_0, y_0, N, shore_limit):
     ax1=plt.subplot(223)
     plt.plot(limit_x, marginal_x)
     plt.xlabel('x')
-    plt.title('Marginal posterior for x', fontsize=9)
     x_patch = mpatches.Patch(color='green', label=limit_x[np.argmax(marginal_x)])
     plt.legend(handles=[x_patch])
     plt.axvline(x=limit_x[np.argmax(marginal_x)], ls='--', color='green')
@@ -246,7 +242,7 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.plot(x_burn_array, y_burn_array, '.', color='m', markersize=1)
     plt.ylabel('y')
     plt.xlabel('x')
-    plt.title('MCMC with 1500 steps as burn-in period', fontsize=10)
+    plt.title('MCMC with 1500 steps as burn-in period', fontsize=12)
     plt.axis('equal')
 
     plt.subplots_adjust(hspace=0.4)

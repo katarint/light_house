@@ -137,10 +137,9 @@ def cred_region_x(marg_posterior_x):
               count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
         cred_index_x[i] = k
 
-
-
-
     return cred_index_x, start_index_x
+
+
 
 def cred_region_y(marg_posterior_y):
     cred_array = [0.5, 0.7, 0.90]
