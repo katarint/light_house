@@ -54,7 +54,7 @@ def m_h(data_array, num_walk):
     x = 100
     y = 8
     mean = (x, y)
-    cov = [[0.93, 0], [0, 1.3]]  # covariance matrix
+    cov = [[0.95, 0], [0, 1.5]]  # covariance matrix
 
     x_array = [0]*num_walk
     y_array = [0]*num_walk
@@ -143,6 +143,37 @@ def norm_const_y(marginal_y):
     return norm_y
 
 
+def cred_region_x(marginal_x):
+    cred_array = [0.95]
+    cred_index_x = [0, ]*np.size(cred_array)
+    start_index_x = np.argmax(marginal_x)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marginal_x)*0.25  # the count starts with the initial start value
+        k = 0
+        while count < cred_array[i]:
+              k += 1
+              count = count + marginal_x[start_index_x+k]*0.25 + marginal_x[start_index_x-k]*0.25
+        cred_index_x[i] = k
+
+    return cred_index_x, start_index_x
+
+def cred_region_y(marginal_y):
+    cred_array = [0.95]
+    cred_index_y = [0, ]*np.size(cred_array)
+    start_index_y = np.argmax(marginal_y)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marginal_y)*0.25  # the count starts with the initial start value
+        k = 0
+        while count < cred_array[i]:
+              k += 1
+              count = count + marginal_y[start_index_y+k]*0.25 + marginal_y[start_index_y-k]*0.25
+        cred_index_y[i] = k
+
+    return cred_index_y, start_index_y
+
+
 
 def light_house(x_0, y_0, N, shore_limit):
     '''light_house-function input parameters : (x_0,y_0,N)'''
@@ -167,6 +198,9 @@ def light_house(x_0, y_0, N, shore_limit):
 
     corner_array = corner_plot(x_burn_array, y_burn_array)
 
+    cred_index_x, start_index_x = cred_region_x(marginal_x)
+    cred_index_y, start_index_y = cred_region_y(marginal_y)
+
 
     '''making subplots'''
 
@@ -176,31 +210,46 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.plot(x_array, y_array, '.', color='m', markersize=1)
     #plt.contour(x_array, y_array)
     plt.ylabel('y')
+    plt.xlabel('x')
     plt.title('MCMC Metropolis Hastings, 9000 random walks', fontsize=10)
     plt.axis('equal')
 
 
-    plt.subplot(224)
+    ax2=plt.subplot(224)
     plt.plot(limit_y, marginal_y)
     plt.xlabel('y')
-    plt.title('Marginal posterior for y', fontsize=9)
-    y_patch = mpatches.Patch(color='orangered', label=limit_y[np.argmax(marginal_y)])
+    plt.title('Marginal distribution for y', fontsize=9)
+    y_patch = mpatches.Patch(color='green', label=limit_y[np.argmax(marginal_y)])
     plt.legend(handles=[y_patch])
+    plt.axvline(x=limit_y[np.argmax(marginal_y)], ls='--', color='green')
+    plt.axvline(x=limit_y[start_index_y + cred_index_y], linestyle='--', color='k')
+    plt.axvline(x=limit_y[start_index_y - cred_index_y], linestyle='--', color='k')
+    cred_plus_y = limit_y[start_index_y + cred_index_y[0]]
+    cred_minus_y = limit_y[start_index_y - cred_index_y[0]]
+    ax2.set_title('position(y)= %s $\pm _{%s} ^{%s}$' % (limit_y[np.argmax(marginal_y)], cred_plus_y, cred_minus_y))
 
-    plt.subplot(223)
+    ax1=plt.subplot(223)
     plt.plot(limit_x, marginal_x)
     plt.xlabel('x')
     plt.title('Marginal posterior for x', fontsize=9)
-    x_patch = mpatches.Patch(color='orangered', label=limit_x[np.argmax(marginal_x)])
+    x_patch = mpatches.Patch(color='green', label=limit_x[np.argmax(marginal_x)])
     plt.legend(handles=[x_patch])
+    plt.axvline(x=limit_x[np.argmax(marginal_x)], ls='--', color='green')
+    plt.axvline(x=limit_x[start_index_x + cred_index_x], linestyle='--', color='k')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x], linestyle='--', color='k')
+    cred_plus_x = limit_x[start_index_x + cred_index_x[0]]
+    cred_minus_x = limit_x[start_index_x - cred_index_x[0]]
+    ax1.set_title('position(x)= %s $\pm _{%s} ^{%s}$' % (limit_x[np.argmax(marginal_x)], cred_plus_x, cred_minus_x))
 
 
     plt.subplot(222)
     plt.plot(x_burn_array, y_burn_array, '.', color='m', markersize=1)
-    #plt.xlabel('x')
     plt.ylabel('y')
+    plt.xlabel('x')
     plt.title('MCMC with 1500 steps as burn-in period', fontsize=10)
     plt.axis('equal')
+
+    plt.subplots_adjust(hspace=0.4)
 
 
     figure = corner.corner(corner_array, bins = 20, quantiles=(0.16, 0.5, 0.84), show_titles=True, labels=[r"$position(x)$", r"$position(y)$"], fontsize=15)
