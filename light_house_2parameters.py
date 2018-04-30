@@ -125,7 +125,7 @@ def norm_const_x(marg_posterior_x):
 
 
 def cred_region_x(marg_posterior_x):
-    cred_array = [0.5, 0.7, 0.8, 0.95]
+    cred_array = [0.5, 0.7, 0.90]
     cred_index_x = [0, ]*np.size(cred_array)
     start_index_x = np.argmax(marg_posterior_x)
 
@@ -137,10 +137,13 @@ def cred_region_x(marg_posterior_x):
               count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
         cred_index_x[i] = k
 
+
+
+
     return cred_index_x, start_index_x
 
 def cred_region_y(marg_posterior_y):
-    cred_array = [0.5, 0.7, 0.8, 0.95]
+    cred_array = [0.5, 0.7, 0.90]
     cred_index_y = [0, ]*np.size(cred_array)
 
     start_index_y = np.argmax(marg_posterior_y)  # start_index is the index of the element with highest value
@@ -153,10 +156,8 @@ def cred_region_y(marg_posterior_y):
                 count = count + marg_posterior_y[start_index_y+k]*0.25 + marg_posterior_y[start_index_y-k]*0.25
         cred_index_y[i] = k
 
+
     return cred_index_y, start_index_y
-
-
-
 
 
 def light_house(x_0, y_0, N, shore_limit):
@@ -177,16 +178,15 @@ def light_house(x_0, y_0, N, shore_limit):
 
     marg_posterior_y = marginal_y(Z, limit_x, limit_y)
 
-    cred_index_x, start_index_x = cred_region_x(marg_posterior_x)
+    cred_index_x, start_index_x = cred_region_x(marg_posterior_x) # contour_levels contains all levels for contour plot
     cred_index_y, start_index_y = cred_region_y(marg_posterior_y)
 
     '''making subplots'''
 
     plt.style.use('ggplot')
 
-
     ax1 = plt.subplot(223)
-    plt.contour(X, Y, Z, 4, colors='k')
+    plt.contour(X, Y, Z, 3, colors='k')
     plt.xlabel('x', fontsize=15)
     plt.ylabel('y', fontsize=15)
     plt.tick_params(axis='x', which='major', labelsize=14)
@@ -199,14 +199,11 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='teal')
     plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='teal')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='b')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='b')
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='crimson')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[3]], ls=':', color='crimson')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[3]], ls=':', color='crimson')
-
-    plt.axhline(y=limit_y[start_index_y + cred_index_y[3]], ls=':', color='crimson')
-    plt.axhline(y=limit_y[start_index_y - cred_index_y[3]], ls=':', color='crimson')
+    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='crimson')
+    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='crimson')
 
     plt.suptitle('Marginal distribution for x and y', fontsize=14, fontweight='bold')
 
@@ -230,18 +227,14 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='teal')
     plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='teal')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='b')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='b')
-
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[3]], ls=':', color='crimson')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[3]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='crimson')
 
     green_patch = mpatches.Patch(color='darkmagenta', label= '50%', ls=':')
     black_patch = mpatches.Patch(color='teal', label='70%', ls=':')
-    blue_patch = mpatches.Patch(color='b', label='80%', ls=':')
-    red_patch = mpatches.Patch(color='crimson', label='95%', ls=':')
+    red_patch = mpatches.Patch(color='crimson', label='90%', ls=':')
 
-    plt.legend(handles=[green_patch, black_patch,blue_patch, red_patch], fontsize=15)
+    plt.legend(handles=[green_patch, black_patch, red_patch], fontsize=15)
 
     plt.plot(limit_x, marg_posterior_x, '.', color='black')
 
@@ -252,8 +245,8 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.xlabel('prob(y|D,I)', fontsize=14)
     plt.title('Marginal distribution for y', fontsize=15)
 
-    cred_plus_y = limit_y[np.argmax(marg_posterior_y) + cred_index_y[3]]
-    cred_minus_y = limit_y[np.argmax(marg_posterior_y) - cred_index_y[3]]
+    cred_plus_y = limit_y[np.argmax(marg_posterior_y) + cred_index_y[2]]
+    cred_minus_y = limit_y[np.argmax(marg_posterior_y) - cred_index_y[2]]
     ax3.set_title('position(y)= %s $\pm _{%s} ^{%s}$' % (limit_y[np.argmax(marg_posterior_y)], cred_plus_y, cred_minus_y))
 
     plt.tick_params(axis='x', which='major', labelsize=14)
@@ -266,8 +259,8 @@ def light_house(x_0, y_0, N, shore_limit):
     #plt.axhline(y=limit_y[start_index_y + cred_index_y[1]], ls=':', color='k')
     #plt.axhline(y=limit_y[start_index_y - cred_index_y[1]], ls=':', color='k')
 
-    plt.axhline(y=limit_y[start_index_y + cred_index_y[3]], ls=':', color='crimson')
-    plt.axhline(y=limit_y[start_index_y - cred_index_y[3]], ls=':', color='crimson')
+    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='crimson')
+    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='crimson')
     plt.plot(marg_posterior_y, limit_y, '.', color='black')
 
     plt.legend(handles=[red_patch], fontsize=15)
