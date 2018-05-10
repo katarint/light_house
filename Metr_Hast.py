@@ -142,6 +142,51 @@ def norm_const_y(marginal_y):
 
 
 def cred_region_x(marginal_x):
+    '''calculates the 95% credible interval for marginal posterior for x'''
+    cred_array = [0.95]
+    cred_index_x = [0, ]*2
+    start_index_x = np.argmax(marginal_x)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marginal_x)*0.25  # the count starts with the maximum value of the peak
+        L = start_index_x - 1          # L and R stands for the interval x-positions
+        R = start_index_x + 1
+        while count < cred_array[i]:
+              if marginal_x[L] >= marginal_x[R]:
+                 count = count + marginal_x[L]*0.25
+                 L = L - 1
+              else:
+                   count = count + marginal_x[R]*0.25
+                   R = R + 1
+        cred_index_x[0] = L
+        cred_index_x[1] = R
+
+    return cred_index_x, start_index_x
+
+def cred_region_y(marginal_y):
+    '''calculates the 95% credible interval for marginal posterior for y'''
+    cred_array = [0.95]
+    cred_index_y = [0, ]*2
+    start_index_y = np.argmax(marginal_y)
+
+    for i in range(len(cred_array)):
+        count = np.amax(marginal_y)*0.25  # the count starts with the initial start value
+        L = start_index_y - 1          # L and R stands for the interval x-positions
+        R = start_index_y + 1
+        while count < cred_array[i]:
+            if marginal_y[L] >= marginal_y[R]:
+               count = count + marginal_y[L]*0.25
+               L = L - 1
+            else:
+                count = count + marginal_y[R]*0.25
+                R = R + 1
+        cred_index_y[0] = L
+        cred_index_y[1] = R
+
+    return cred_index_y, start_index_y
+
+'''
+def cred_region_x(marginal_x):
     cred_array = [0.95]
     cred_index_x = [0, ]*np.size(cred_array)
     start_index_x = np.argmax(marginal_x)
@@ -149,14 +194,16 @@ def cred_region_x(marginal_x):
     for i in range(len(cred_array)):
         count = np.amax(marginal_x)*0.25  # the count starts with the initial start value
         k = 0
+        L = 0           # L and R stands for the interval value
+        R = 0
         while count < cred_array[i]:
               k += 1
               count = count + marginal_x[start_index_x+k]*0.25 + marginal_x[start_index_x-k]*0.25
         cred_index_x[i] = k
 
-    return cred_index_x, start_index_x
+    return cred_index_x, start_index_x'''
 
-def cred_region_y(marginal_y):
+'''def cred_region_y(marginal_y):
     cred_array = [0.95]
     cred_index_y = [0, ]*np.size(cred_array)
     start_index_y = np.argmax(marginal_y)
@@ -169,7 +216,7 @@ def cred_region_y(marginal_y):
               count = count + marginal_y[start_index_y+k]*0.25 + marginal_y[start_index_y-k]*0.25
         cred_index_y[i] = k
 
-    return cred_index_y, start_index_y
+    return cred_index_y, start_index_y'''
 
 
 
@@ -203,7 +250,6 @@ def light_house(x_0, y_0, N, shore_limit):
     '''making subplots'''
 
     plt.style.use('ggplot')
-
     plt.subplot(221)
     plt.plot(x_array, y_array, '.', color='m', markersize=1)
     #plt.contour(x_array, y_array)
@@ -214,28 +260,33 @@ def light_house(x_0, y_0, N, shore_limit):
 
 
     ax2=plt.subplot(224)
-    plt.plot(limit_y, marginal_y)
+    plt.plot(limit_y, marginal_y, color='m')
     plt.xlabel('y')
     y_patch = mpatches.Patch(color='green', label=limit_y[np.argmax(marginal_y)])
     plt.legend(handles=[y_patch])
     plt.axvline(x=limit_y[np.argmax(marginal_y)], ls='--', color='green')
-    plt.axvline(x=limit_y[start_index_y + cred_index_y], linestyle='--', color='k')
-    plt.axvline(x=limit_y[start_index_y - cred_index_y], linestyle='--', color='k')
-    cred_plus_y = limit_y[start_index_y + cred_index_y[0]]
-    cred_minus_y = limit_y[start_index_y - cred_index_y[0]]
+    plt.axvline(x=limit_y[cred_index_y[1]], linestyle='--', color='k')
+    plt.axvline(x=limit_y[cred_index_y[0]], linestyle='--', color='k')
+    cred_plus_y = limit_y[cred_index_y[1]] - limit_y[start_index_y]
+    cred_minus_y = limit_y[start_index_y] - limit_y[cred_index_y[0]]
+    print(limit_y[cred_index_y[0]])
+    print(limit_y[np.argmax(marginal_y)])
+    print(limit_y[cred_index_y[1]])
     ax2.set_title('position(y)= %s $\pm _{%s} ^{%s}$' % (limit_y[np.argmax(marginal_y)], cred_plus_y, cred_minus_y))
+    plt.plot(limit_y, marginal_y, '.', color='k')
 
     ax1=plt.subplot(223)
-    plt.plot(limit_x, marginal_x)
+    plt.plot(limit_x, marginal_x, color='m')
     plt.xlabel('x')
     x_patch = mpatches.Patch(color='green', label=limit_x[np.argmax(marginal_x)])
     plt.legend(handles=[x_patch])
     plt.axvline(x=limit_x[np.argmax(marginal_x)], ls='--', color='green')
-    plt.axvline(x=limit_x[start_index_x + cred_index_x], linestyle='--', color='k')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x], linestyle='--', color='k')
-    cred_plus_x = limit_x[start_index_x + cred_index_x[0]]
-    cred_minus_x = limit_x[start_index_x - cred_index_x[0]]
+    plt.axvline(x=limit_x[cred_index_x[1]], linestyle='--', color='k')
+    plt.axvline(x=limit_x[cred_index_x[0]], linestyle='--', color='k')
+    cred_plus_x = limit_x[cred_index_x[1]] - limit_x[start_index_x]
+    cred_minus_x = limit_x[start_index_x] - limit_x[cred_index_x[0]]
     ax1.set_title('position(x)= %s $\pm _{%s} ^{%s}$' % (limit_x[np.argmax(marginal_x)], cred_plus_x, cred_minus_x))
+    plt.plot(limit_x, marginal_x, '.', color='k')
 
 
     plt.subplot(222)
@@ -265,7 +316,7 @@ def light_house(x_0, y_0, N, shore_limit):
 # light_house-function input parameters : (x_0, y_0, N, shore_limit)
 # x_0,y_0= position of light house, N = number of data, shore_limit = distance of the shore that we want to study
 
-light_house(200, 10, 93, 400)
+light_house(200, 10, 90, 400)
 
 
 

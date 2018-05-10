@@ -125,35 +125,48 @@ def norm_const_x(marg_posterior_x):
 
 
 def cred_region_x(marg_posterior_x):
-    cred_array = [0.5, 0.7, 0.90]
-    cred_index_x = [0, ]*np.size(cred_array)
+    cred_array = [0.5, 0.7, 0.90, 0.3]   # array containing all credible percentages
+    cred_index_x = np.zeros((5,), dtype=[('x', 'i4'), ('y', 'i4')])
     start_index_x = np.argmax(marg_posterior_x)
 
     for i in range(len(cred_array)):
         count = np.amax(marg_posterior_x)*0.25  # the count starts with the initial start value
-        k = 0
+        L = start_index_x - 1
+        R = start_index_x + 1
         while count < cred_array[i]:
-              k += 1
-              count = count + marg_posterior_x[start_index_x+k]*0.25 + marg_posterior_x[start_index_x-k]*0.25
-        cred_index_x[i] = k
+            if marg_posterior_x[L] >= marg_posterior_x[R]:
+                count = count + marg_posterior_x[L]*0.25
+                L = L - 1
+            else:
+                count = count + marg_posterior_x[L]*0.25
+                R = R + 1
+        cred_index_x[i][0] = L
+        cred_index_x[i][1]= R
 
     return cred_index_x, start_index_x
 
 
 
 def cred_region_y(marg_posterior_y):
-    cred_array = [0.5, 0.7, 0.90]
-    cred_index_y = [0, ]*np.size(cred_array)
+    cred_array = [0.5, 0.7, 0.90, 0.3]
+    cred_index_y = np.zeros((5,), dtype=[('x', 'i4'), ('y', 'i4')])   # a 4x2 zero matrix
 
     start_index_y = np.argmax(marg_posterior_y)  # start_index is the index of the element with highest value
 
     for i in range(len(cred_array)):
         count = np.amax(marg_posterior_y)*0.25  # the count starts with the initial start value
-        k = 0
+        L = start_index_y - 1
+        R = start_index_y + 1
+        print(i)
         while count < cred_array[i]:
-                k += 1
-                count = count + marg_posterior_y[start_index_y+k]*0.25 + marg_posterior_y[start_index_y-k]*0.25
-        cred_index_y[i] = k
+            if marg_posterior_y[L] >= marg_posterior_y[R]:
+                count = count + marg_posterior_y[L]*0.25
+                L = L - 1
+            else:
+                count = count + marg_posterior_y[L]*0.25
+                R = R + 1
+        cred_index_y[i][0] = L
+        cred_index_y[i][1] = R
 
 
     return cred_index_y, start_index_y
@@ -185,24 +198,27 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.style.use('ggplot')
 
     ax1 = plt.subplot(223)
-    plt.contour(X, Y, Z, 3, colors='k')
+    plt.contour(X, Y, Z, 4, colors='k')
     plt.xlabel('x', fontsize=15)
     plt.ylabel('y', fontsize=15)
     plt.tick_params(axis='x', which='major', labelsize=14)
     plt.tick_params(axis='y', which='major', labelsize=14)
     ax1.set_xlim(x_0 - 10, x_0 + 10)
     ax1.set_ylim(0, y_0 + 15)
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[0]], ls=':', color='darkmagenta')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[0]], ls=':', color='darkmagenta')
+    plt.axvline(x=limit_x[cred_index_x[3][0]], linestyle=':', color='blue')     # 0,3 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[3][1]], linestyle=':', color='blue')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='teal')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='teal')
+    plt.axvline(x=limit_x[cred_index_x[0][0]], linestyle=':', color='darkmagenta')   # 0,5 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[0][1]], linestyle=':', color='darkmagenta')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='crimson')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[cred_index_x[1][0]], linestyle=':', color='teal')        # 0,7 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[1][1]], linestyle=':', color='teal')
 
-    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='crimson')
-    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[cred_index_x[2][0]], linestyle=':', color='crimson')     # 0,9 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[2][1]], linestyle=':', color='crimson')
+
+    plt.axhline(y=limit_y[cred_index_y[2][0]], linestyle=':', color='crimson')     # 0,9 credible interval for y
+    plt.axhline(y=limit_y[cred_index_y[2][1]], linestyle=':', color='crimson')
 
     plt.suptitle('Marginal distribution for x and y', fontsize=14, fontweight='bold')
 
@@ -210,9 +226,9 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.plot(limit_x, marg_posterior_x, color='black')
     plt.title('Marginal distribution for x', fontsize=15)
 
-    # calculates x-positions for 95% credible interval and plots it as axis title for x
-    cred_plus_x = limit_x[np.argmax(marg_posterior_x) + cred_index_x[2]]
-    cred_minus_x = limit_x[np.argmax(marg_posterior_x) - cred_index_x[2]]
+    # calculates x-intervals for 90% credibility and plots it as axis title for x
+    cred_plus_x = limit_x[cred_index_x[2][1]] - limit_x[np.argmax(marg_posterior_x)]
+    cred_minus_x = limit_x[np.argmax(marg_posterior_x)] - limit_x[cred_index_x[2][0]]
     ax2.set_title('position(x)= %s $\pm _{%s} ^{%s}$' % (limit_x[np.argmax(marg_posterior_x)], cred_plus_x, cred_minus_x))
 
     plt.ylabel('prob(x|D,I)', fontsize=14)
@@ -220,20 +236,25 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.tick_params(axis='y', which='major', labelsize=14)
     ax2.set_xlim(x_0 - 10, x_0 + 10)
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[0]], ls=':', color='darkmagenta')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[0]], ls=':', color='darkmagenta')
+    plt.axvline(x=limit_x[cred_index_x[3][0]], linestyle=':', color='blue')     # 0,3 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[3][1]], linestyle=':', color='blue')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[1]], ls=':', color='teal')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[1]], ls=':', color='teal')
 
-    plt.axvline(x=limit_x[start_index_x + cred_index_x[2]], ls=':', color='crimson')
-    plt.axvline(x=limit_x[start_index_x - cred_index_x[2]], ls=':', color='crimson')
+    plt.axvline(x=limit_x[cred_index_x[0][0]], linestyle=':', color='darkmagenta')  # 0,5 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[0][1]], linestyle=':', color='darkmagenta')
 
-    green_patch = mpatches.Patch(color='darkmagenta', label= '50%', ls=':')
+    plt.axvline(x=limit_x[cred_index_x[1][0]], linestyle=':', color='teal')  # 0,7 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[1][1]], linestyle=':', color='teal')
+
+    plt.axvline(x=limit_x[cred_index_x[2][0]], linestyle=':', color='crimson')  # 0,9 credible interval for x
+    plt.axvline(x=limit_x[cred_index_x[2][1]], linestyle=':', color='crimson')
+
+    green_patch = mpatches.Patch(color='darkmagenta', label='50%', ls=':')
     black_patch = mpatches.Patch(color='teal', label='70%', ls=':')
     red_patch = mpatches.Patch(color='crimson', label='90%', ls=':')
+    blue_patch = mpatches.Patch(color='blue', label='30%', ls=':')
 
-    plt.legend(handles=[green_patch, black_patch, red_patch], fontsize=15)
+    plt.legend(handles=[blue_patch,green_patch, black_patch, red_patch], fontsize=15)
 
     plt.plot(limit_x, marg_posterior_x, '.', color='black')
 
@@ -244,22 +265,17 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.xlabel('prob(y|D,I)', fontsize=14)
     plt.title('Marginal distribution for y', fontsize=15)
 
-    cred_plus_y = limit_y[np.argmax(marg_posterior_y) + cred_index_y[2]]
-    cred_minus_y = limit_y[np.argmax(marg_posterior_y) - cred_index_y[2]]
+    cred_plus_y = limit_y[cred_index_y[2][1]] - limit_y[np.argmax(marg_posterior_y)]
+    cred_minus_y = limit_y[np.argmax(marg_posterior_y)] - limit_y[cred_index_y[2][0]]
     ax3.set_title('position(y)= %s $\pm _{%s} ^{%s}$' % (limit_y[np.argmax(marg_posterior_y)], cred_plus_y, cred_minus_y))
 
     plt.tick_params(axis='x', which='major', labelsize=14)
     plt.tick_params(axis='y', which='major', labelsize=14)
     ax3.set_ylim(0, y_0 + 15)
 
-    #plt.axhline(y=limit_y[start_index_y + cred_index_y[0]], ls=':', color='g')
-    #plt.axhline(y=limit_y[start_index_y - cred_index_y[0]], ls=':', color='g')
 
-    #plt.axhline(y=limit_y[start_index_y + cred_index_y[1]], ls=':', color='k')
-    #plt.axhline(y=limit_y[start_index_y - cred_index_y[1]], ls=':', color='k')
-
-    plt.axhline(y=limit_y[start_index_y + cred_index_y[2]], ls=':', color='crimson')
-    plt.axhline(y=limit_y[start_index_y - cred_index_y[2]], ls=':', color='crimson')
+    plt.axhline(y=limit_y[cred_index_y[2][0]],linestyle=':', color='crimson')
+    plt.axhline(y=limit_y[cred_index_y[2][1]],linestyle=':', color='crimson')
     plt.plot(marg_posterior_y, limit_y, '.', color='black')
 
     plt.legend(handles=[red_patch], fontsize=15)
