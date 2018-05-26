@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import corner
 import matplotlib.patches as mpatches
+import time
 
 
 def random_angle_generator(N):
@@ -42,7 +42,7 @@ def position_converter(angle_array, x_0, y_0):
 
 
 def posterior_2(data_array, x_0, y_0):
-    limit_x = np.arange(x_0 - 30, x_0 + 30, 0.25)
+    limit_x = np.arange(x_0 - 20, x_0 + 20, 0.25)
     limit_y = np.arange(0, 15 + y_0, 0.25)
     x = limit_x
     y = limit_y
@@ -57,7 +57,6 @@ def posterior_2(data_array, x_0, y_0):
     for j in np.arange(1, np.size(y)):           # scaling down z
         for i in np.arange(1, np.size(x)):
             Z[j][i] = Z[j][i]/max_value
-    print('z max : %s', Z.max())
     return X, Y, Z, limit_x, limit_y
 
 
@@ -95,8 +94,6 @@ def marginal_x(Z, limit_x, limit_y):
     for i in range(len(limit_x)):  # normalizing the posterior
         marg_posterior_x[i] = marg_posterior_x[i] * norm_x
 
-    print(np.sum(marg_posterior_x)*0.25)
-
     return marg_posterior_x
 
 
@@ -114,8 +111,6 @@ def marginal_y(Z, limit_x, limit_y):
 
     for i in range(len(limit_y)):     # normalizing the posterior
         marg_posterior_y[i] = marg_posterior_y[i]*norm_y
-
-    print(np.sum(marg_posterior_y) * 0.25)
 
     return marg_posterior_y
 
@@ -333,29 +328,20 @@ def cred_mh_y(marg_scatter_y):
 
 def light_house(x_0, y_0, N, shore_limit):
     '''light_house-function input parameters : (x_0,y_0,N)'''
+
+
     angle_array = random_angle_generator(N)
     data_array = position_converter(angle_array, x_0, y_0)
 
-    num_walk = 200000  # num_walk = number of random walks
+
+
+    num_walk = 90000  # num_walk = number of random walks
+
+    start_mh = time.time()
     x_array, y_array, x_burn_array, y_burn_array, z_burn_array = m_h(data_array, num_walk)
+    stop_mh = time.time()
 
-    start_limit_x = x_0 - 20
-    start_limit_y = y_0 - 5
-    interval = 0.25
-
-    #limit_x = np.arange(start_limit_x , x_0 + 20, interval)
-    #limit_y = np.arange(start_limit_y, y_0 + 5, interval)
-
-
-
-    #X_scatter, Y_scatter = np.meshgrid(limit_x, limit_y)
-
-
-    #marginal_x = marg_x(limit_x, x_burn_array, y_burn_array)
-    #marginal_y = marg_y(limit_y, x_burn_array, y_burn_array)
-
-    #cred_index_x, start_index_x = cred_region_x(marginal_x)
-    #cred_index_y, start_index_y = cred_region_y(marginal_y)
+    print('mh time is:', stop_mh - start_mh)
 
     X_scatter, Y_scatter, z_contour, x_contour_limit, y_contour_limit = scatter_contour(x_burn_array, y_burn_array)
 
@@ -364,16 +350,6 @@ def light_house(x_0, y_0, N, shore_limit):
 
     cred_scatter_x, start_index_scatter_x, contour_levels = cred_mh_x(marg_scatter_x)
     cred_scatter_y, start_index_scatter_y = cred_mh_y(marg_scatter_y)
-
-    '''brute-force method'''
-    X, Y, Z, limit_x, limit_y = posterior_2(data_array, x_0, y_0)
-
-    marg_posterior_x = marginal_x(Z, limit_x, limit_y)
-
-    marg_posterior_y = marginal_y(Z, limit_x, limit_y)
-
-    cred_index_x, start_index_x, brute_levels = cred_region_x(marg_posterior_x) # contour_levels contains all levels for contour plot
-    cred_index_y, start_index_y = cred_region_y(marg_posterior_y)
 
     '''making subplots'''
     ninety = 'darkred'
@@ -427,7 +403,8 @@ def light_house(x_0, y_0, N, shore_limit):
     cred_scatter_plus_x = x_contour_limit[cred_scatter_x[0][1]] - x_contour_limit[np.argmax(marg_scatter_x)]
     cred_scatter_minus_x = x_contour_limit[np.argmax(marg_scatter_x)] - x_contour_limit[cred_scatter_x[0][0]]
     ax_2.set_title(
-        'position(x)= %s $\pm ^{%s} _{%s}$' % (np.round(x_contour_limit[np.argmax(marg_scatter_x)],2), np.round(cred_scatter_plus_x,2), np.round(cred_scatter_minus_x,2)))
+        'position(x)= %s $\pm ^{%s} _{%s}$' % (np.round(x_contour_limit[np.argmax(marg_scatter_x)],2),
+                                               np.round(cred_scatter_plus_x,2), np.round(cred_scatter_minus_x,2)))
 
     green_patch = mpatches.Patch(color=fifty, label='50%', ls='--')
     black_patch = mpatches.Patch(color=seventy, label='70%', ls='--')
@@ -437,7 +414,9 @@ def light_house(x_0, y_0, N, shore_limit):
     plt.legend(handles=[blue_patch, green_patch, black_patch, red_patch], fontsize=15)
 
     ax1=plt.subplot(223)
-    plt.contour(X_scatter, Y_scatter, z_contour, levels=[contour_levels[0], contour_levels[1], contour_levels[2], contour_levels[3]], colors='k', zorder = 2)
+    plt.contour(X_scatter, Y_scatter, z_contour, levels=[contour_levels[0], contour_levels[1], contour_levels[2],
+                                                         contour_levels[3]], colors=(ninety, seventy, fifty, thirty),
+                zorder=2)
     plt.plot(x_burn_array, y_burn_array, '.', color='orchid', markersize=1, zorder = 1)
     plt.ylabel('y')
     plt.xlabel('x')
@@ -475,13 +454,28 @@ def light_house(x_0, y_0, N, shore_limit):
         'position(x)= %s $\pm ^{%s} _{%s}$' % (
         np.round(y_contour_limit[np.argmax(marg_scatter_y)], 2), np.round(cred_scatter_plus_y, 2), np.round(cred_scatter_minus_y, 2)))
 
-    '''figure 3'''
+    '''
+    figure 3 , brute-force method
+    '''
+    start_brute = time.time()
+    X, Y, Z, limit_x, limit_y = posterior_2(data_array, x_0, y_0)
+    stop_brute = time.time()
+    print('brute time is:', stop_brute - start_brute)
+
+    marg_posterior_x = marginal_x(Z, limit_x, limit_y)
+
+    marg_posterior_y = marginal_y(Z, limit_x, limit_y)
+
+    cred_index_x, start_index_x, brute_levels = cred_region_x(
+        marg_posterior_x)  # contour_levels contains all levels for contour plot
+    cred_index_y, start_index_y = cred_region_y(marg_posterior_y)
+
     plt.figure()
 
     plt.style.use('ggplot')
 
     ax1 = plt.subplot(223)
-    plt.contour(X, Y, Z, levels=brute_levels, colors='k')
+    plt.contour(X, Y, Z, levels=brute_levels, colors=(ninety, seventy, fifty, thirty))
     plt.xlabel('x', fontsize=15)
     plt.ylabel('y', fontsize=15)
     plt.tick_params(axis='x', which='major', labelsize=14)
